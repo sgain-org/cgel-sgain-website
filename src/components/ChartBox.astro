@@ -1,0 +1,84 @@
+---
+interface Props {
+  id?: string;
+  svg?: string;
+}
+const { id, svg } = Astro.props;
+---
+
+{
+  svg ? (
+    <div class="chartbox" id={id} set:html={svg} />
+  ) : (
+    <div class="chartbox" id={id}>
+      <slot />
+    </div>
+  )
+}
+
+<style>
+  .chartbox {
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  @media (max-width: 700px) {
+    .chartbox {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chartbox :global(svg.chart) {
+      min-width: 560px;
+    }
+  }
+  .chartbox :global(svg.chart) {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .chartbox :global(.chart text) {
+    font-family: var(--font-sans);
+    fill: var(--ink);
+  }
+  .chartbox :global(.chart .axis text) {
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .chartbox :global(.chart .axis.sm text) {
+    font-size: 9px;
+  }
+  .chartbox :global(.chart .axis .domain),
+  .chartbox :global(.chart .axis .tick line) {
+    stroke: var(--line);
+  }
+  .chartbox :global(.chart .axlabel) {
+    font-size: 11px;
+    fill: var(--muted);
+  }
+  .chartbox :global(.chart .legtitle) {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--ink);
+  }
+  .chartbox :global(.chart .legtext) {
+    font-size: 10.5px;
+    fill: var(--ink);
+  }
+  .chartbox :global(.chart .rowlbl) {
+    font-size: 10.5px;
+    fill: var(--ink);
+  }
+  .chartbox :global(.chart .collbl) {
+    font-size: 11.5px;
+    fill: var(--ink);
+  }
+  .chartbox :global(.chart a.chart-link) {
+    cursor: pointer;
+  }
+  .chartbox :global(.chart a.chart-link:hover rect) {
+    opacity: 0.82;
+  }
+  .chartbox :global(.chart a.chart-link:hover text) {
+    text-decoration: underline;
+  }
+</style>

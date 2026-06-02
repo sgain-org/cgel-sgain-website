@@ -1,0 +1,96 @@
+---
+import ChartBox from "@/components/ChartBox.astro";
+import Section from "@/components/Section.astro";
+
+type ProblemChartView = {
+  key: string;
+  label: string;
+  svg: string;
+};
+
+type Props = {
+  problemChartViews: ProblemChartView[];
+};
+
+const { problemChartViews } = Astro.props as Props;
+---
+
+<Section
+  title="Environmental Problems Targeted by These Initiatives Across Levels"
+  subtitle="China's efforts to lead global environmental governance primarily focus on climate change (30%), followed respectively by energy (16%), water (12%). Meanwhile, around 11% of the initiatives in our database address broad environmental issues without having a specific focus."
+>
+  <div id="chart-problems" class="chart-switcher">
+    <div class="chart-tabs">
+      {
+        problemChartViews.map((view, index) => (
+          <button
+            type="button"
+            class={`chart-tab${index === 0 ? " on" : ""}`}
+            data-tab={view.key}
+          >
+            {view.label}
+          </button>
+        ))
+      }
+    </div>
+    <ChartBox>
+      <div>
+        {
+          problemChartViews.map((view, index) => (
+            <div
+              class={`problem-view${index === 0 ? " on" : ""}`}
+              data-panel={view.key}
+              set:html={view.svg}
+            />
+          ))
+        }
+      </div>
+    </ChartBox>
+  </div>
+</Section>
+
+<style>
+  .chart-switcher {
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  .chart-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .chart-tab {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 13px;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 7px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .chart-tab:hover:not(.on) {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+  .chart-tab.on {
+    background: var(--teal-d);
+    border-color: var(--teal-d);
+    color: #fff;
+  }
+  .problem-view {
+    display: none;
+  }
+  .problem-view.on {
+    display: block;
+  }
+</style>
+
+<script>
+  import { bindChartTooltips, initChartTabs } from "@/lib/homepage-client";
+
+  initChartTabs("chart-problems");
+  bindChartTooltips();
+</script>

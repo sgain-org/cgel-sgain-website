@@ -1,0 +1,220 @@
+---
+import { MenuIcon, XIcon } from "@lucide/astro";
+
+const path = Astro.url.pathname;
+const isActive = (href: string) => path === href;
+
+const LINKS = [
+  ["/", "Overview"],
+  ["/browse/", "Browse"],
+  ["/methodology/", "Methodology"],
+  ["/publications/", "Publications"],
+  ["/about/", "About & Cite"],
+] as const;
+---
+
+<nav>
+  <div class="wrap">
+    <a href="/" class="logo">
+      <img
+        src="/logos/SGAIN_Logo_full.png"
+        alt="SGAIN"
+        width="1219"
+        height="659"
+        class="brand-mark"
+      />CGEL Database</a
+    >
+    <div class="navlinks">
+      {
+        LINKS.map(([href, label]) => (
+          <a href={href} class={isActive(href) ? "active" : ""}>
+            {label}
+          </a>
+        ))
+      }
+    </div>
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-label="Open menu"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+    >
+      <MenuIcon size={24} />
+    </button>
+  </div>
+</nav>
+
+<div id="mobile-menu" class="mobile-menu" hidden>
+  <button class="nav-close" type="button" aria-label="Close menu">
+    <XIcon size={24} />
+  </button>
+  <div class="mobile-links">
+    {
+      LINKS.map(([href, label]) => (
+        <a href={href} class={isActive(href) ? "active" : ""}>
+          {label}
+        </a>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: color-mix(in srgb, var(--paper) 93%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 62px;
+  }
+  .logo {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 19px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .logo .brand-mark {
+    height: 34px;
+    width: auto;
+    display: block;
+    flex: none;
+  }
+  .navlinks {
+    display: flex;
+    gap: 24px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .navlinks a {
+    color: var(--muted);
+    cursor: pointer;
+    transition: 0.2s;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+  }
+  .navlinks a:hover {
+    color: var(--teal);
+  }
+  .navlinks a.active {
+    color: var(--teal-d);
+    border-bottom-color: var(--teal);
+  }
+  .nav-toggle,
+  .nav-close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .mobile-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 28px 28px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .mobile-menu[hidden] {
+    display: none;
+  }
+  .mobile-menu.open {
+    opacity: 1;
+  }
+  .mobile-menu .nav-close {
+    display: flex;
+    position: absolute;
+    top: 11px;
+    right: 28px;
+  }
+  .mobile-menu .mobile-links {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+  }
+  .mobile-menu .mobile-links a {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--muted);
+    transition: 0.2s;
+  }
+  .mobile-menu .mobile-links a.active {
+    color: var(--teal-d);
+  }
+  @media (max-width: 880px) {
+    .navlinks {
+      display: none;
+    }
+    .nav-toggle {
+      display: flex;
+    }
+  }
+  @media (max-width: 480px) {
+    .mobile-menu .nav-close {
+      right: 18px;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>(".nav-toggle");
+  const closeBtn = document.querySelector<HTMLButtonElement>(".nav-close");
+  const menu = document.querySelector<HTMLElement>("#mobile-menu");
+
+  if (toggle && closeBtn && menu) {
+    const open = () => {
+      menu.hidden = false;
+      requestAnimationFrame(() => menu.classList.add("open"));
+      document.body.classList.add("menu-open");
+      toggle.setAttribute("aria-expanded", "true");
+    };
+
+    const close = () => {
+      menu.classList.remove("open");
+      document.body.classList.remove("menu-open");
+      toggle.setAttribute("aria-expanded", "false");
+      window.setTimeout(() => {
+        menu.hidden = true;
+      }, 200);
+    };
+
+    toggle.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+
+    for (const link of menu.querySelectorAll("a")) {
+      link.addEventListener("click", close);
+    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !menu.hidden) close();
+    });
+
+    const desktop = window.matchMedia("(min-width: 881px)");
+    desktop.addEventListener("change", (e) => {
+      if (e.matches && !menu.hidden) close();
+    });
+  }
+</script>

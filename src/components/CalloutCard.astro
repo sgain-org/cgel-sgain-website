@@ -1,0 +1,116 @@
+---
+import { ArrowRightIcon } from "@lucide/astro";
+
+interface Props {
+  title: string;
+  href: string;
+  cta: string;
+  external?: boolean;
+  secondaryHref?: string;
+  secondaryCta?: string;
+  secondaryExternal?: boolean;
+}
+const {
+  title,
+  href,
+  cta,
+  external,
+  secondaryHref,
+  secondaryCta,
+  secondaryExternal,
+} = Astro.props;
+---
+
+<div class="callout">
+  <div class="callout-content">
+    <div class="callout-title">{title}</div>
+    <div class="callout-sub"><slot /></div>
+  </div>
+  <div class="callout-actions">
+    {
+      secondaryHref && secondaryCta && (
+        <a
+          class="callout-btn callout-btn-secondary"
+          href={secondaryHref}
+          target={secondaryExternal ? "_blank" : undefined}
+          rel={secondaryExternal ? "noopener" : undefined}
+        >
+          {secondaryCta}
+        </a>
+      )
+    }
+    <a
+      class="callout-btn"
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener" : undefined}
+      >{cta}<ArrowRightIcon size={15} /></a
+    >
+  </div>
+</div>
+
+<style>
+  .callout {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, var(--mist), var(--mist-2));
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .callout-content {
+    flex: 1 1 auto;
+    min-width: min(100%, 20rem);
+  }
+  .callout-title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--teal-d);
+  }
+  .callout-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .callout-btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 18px;
+    background: var(--teal);
+    color: #fff;
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    text-decoration: none;
+  }
+  .callout-btn:hover {
+    background: var(--teal-d);
+    color: #fff;
+  }
+  .callout-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .callout-btn-secondary {
+    background: #fff;
+    color: var(--teal);
+    border: 1px solid var(--line);
+  }
+  .callout-btn-secondary:hover {
+    background: var(--paper);
+    border-color: var(--slate);
+    color: var(--teal-d);
+  }
+</style>

@@ -1,0 +1,523 @@
+---
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ExternalLinkIcon,
+  XIcon,
+} from "@lucide/astro";
+import CitationCard from "@/components/CitationCard.astro";
+---
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<template id="detail-tpl">
+  <div class="mhead">
+    <button class="modal-close" type="button" data-close aria-label="Close"
+      ><XIcon size={18} /></button
+    >
+    <div class="code" data-f="code"></div>
+    <!-- biome-ignore lint/a11y/useHeadingContent: filled at runtime by openDetail() -->
+    <h2 data-f="title"></h2>
+    <div class="zh" data-f="zh" hidden></div>
+    <div class="mbadges" data-f="badges"></div>
+    <!-- biome-ignore lint/a11y/useValidAnchor: href set at runtime by openDetail() -->
+    <a class="mlink" data-f="weblink" target="_blank" hidden
+      >Visit official website <ExternalLinkIcon size={14} /></a
+    >
+  </div>
+  <div class="mbody">
+    <h4 data-f="bg-heading" hidden>Background</h4>
+    <p data-f="description" hidden></p>
+    <h4>Classification</h4>
+    <div class="kv">
+      <div data-f="row-type_primary" hidden>
+        <div class="k">Primary type</div>
+        <div class="v" data-f="type_primary"></div>
+      </div>
+      <div data-f="row-type_secondary" hidden>
+        <div class="k">Secondary type</div>
+        <div class="v" data-f="type_secondary"></div>
+      </div>
+      <div data-f="row-problem1" hidden>
+        <div class="k">Environmental issue</div>
+        <div class="v" data-f="problem1"></div>
+      </div>
+    </div>
+    <h4 data-f="sdg-heading" hidden>Sustainable Development Goals</h4>
+    <div class="sdgs" data-f="sdgs" hidden></div>
+    <h4>Key actors</h4>
+    <div class="actors" data-f="actors"></div>
+    <CitationCard />
+  </div>
+  <div class="mfoot">
+    <span class="pager" data-f="pager"></span>
+    <div class="navbtns">
+      <button type="button" class="navbtn" data-nav-prev
+        ><ArrowLeftIcon size={13} /> Prev</button
+      >
+      <button type="button" class="navbtn" data-nav-next
+        >Next <ArrowRightIcon size={13} /></button
+      >
+    </div>
+  </div>
+</template>
+
+<template id="detail-badge-tpl"><span class="mb"></span></template>
+<template id="detail-sdg-tpl">
+  <a
+    class="sdg"
+    href="https://sdgs.un.org/goals"
+    target="_blank"
+    rel="noopener"
+    aria-label="Sustainable Development Goal"
+    ><span class="sdg-n"></span><span class="sdg-t"></span></a
+  >
+</template>
+<template id="detail-actor-tpl"
+  ><div class="actor">
+    <span class="dot"></span><div>
+      <div class="nm"></div><div class="rl"></div>
+    </div>
+  </div></template
+>
+<script>
+  import { SDG_COLORS } from "@/lib/constants";
+  import { createModal } from "@/lib/modal";
+  import { parseSdgs } from "@/lib/sdgs";
+  import type { Initiative } from "@/lib/types";
+
+  const overlayEl = document.getElementById("overlay") as HTMLElement;
+  const modalEl = document.getElementById("modal") as HTMLElement;
+  const tpl = document.getElementById("detail-tpl") as HTMLTemplateElement;
+  const badgeTpl = document.getElementById(
+    "detail-badge-tpl",
+  ) as HTMLTemplateElement;
+  const sdgTpl = document.getElementById(
+    "detail-sdg-tpl",
+  ) as HTMLTemplateElement;
+  const actorTpl = document.getElementById(
+    "detail-actor-tpl",
+  ) as HTMLTemplateElement;
+  const modal = createModal(overlayEl);
+
+  const cloneItem = (t: HTMLTemplateElement): HTMLElement =>
+    (t.content.cloneNode(true) as DocumentFragment)
+      .firstElementChild as HTMLElement;
+
+  const commaList = (s: string): string => {
+    const items = s
+      .split(";")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return items.join(items.some((x) => x.includes(",")) ? "; " : ", ");
+  };
+
+  let navList: Initiative[] = [];
+  let navIndex = -1;
+
+  function render() {
+    const d = navList[navIndex];
+    if (!d) return;
+    const frag = tpl.content.cloneNode(true) as DocumentFragment;
+    const pick = (f: string) =>
+      frag.querySelector(`[data-f="${f}"]`) as HTMLElement | null;
+    const set = (f: string, text: string) => {
+      const el = pick(f);
+      if (el) el.textContent = text;
+    };
+    const show = (f: string, on: boolean) => {
+      const el = pick(f);
+      if (el) el.hidden = !on;
+    };
+
+    set("code", `CGEL-${d.code}`);
+    set("title", `${d.name}${d.acronym ? ` (${d.acronym})` : ""}`);
+    set("zh", d.name_zh);
+    show("zh", !!d.name_zh);
+
+    const badges = pick("badges");
+    const addBadge = (text: string) => {
+      const b = cloneItem(badgeTpl);
+      b.textContent = text;
+      badges?.appendChild(b);
+    };
+    if (d.start_year)
+      addBadge(`${d.start_year}${d.end_year ? `–${d.end_year}` : ""}`);
+    if (d.status) addBadge(d.status);
+    if (d.governance) addBadge(d.governance);
+    if (d.region) addBadge(d.region);
+
+    show("bg-heading", !!d.description);
+    show("description", !!d.description);
+    set("description", d.description);
+
+    show("row-type_primary", !!d.type_primary);
+    set("type_primary", d.type_primary);
+    show("row-type_secondary", !!d.type_secondary);
+    set("type_secondary", d.type_secondary);
+    show("row-problem1", !!d.problem1);
+    set("problem1", d.problem1);
+
+    show("sdg-heading", !!d.sdg);
+    show("sdgs", !!d.sdg);
+    const sdgs = pick("sdgs");
+    if (d.sdg && sdgs) {
+      for (const s of parseSdgs(d.sdg)) {
+        const chip = cloneItem(sdgTpl) as HTMLAnchorElement;
+        chip.href = `https://sdgs.un.org/goals/goal${s.n}`;
+        chip.title = `SDG ${s.n}: ${s.title}`;
+        chip.ariaLabel = `SDG ${s.n}: ${s.title}`;
+        const numEl = chip.querySelector(".sdg-n") as HTMLElement | null;
+        if (numEl) {
+          numEl.textContent = String(s.n);
+          numEl.style.background = SDG_COLORS[s.n] ?? "#6b7884";
+        }
+        const titleEl = chip.querySelector(".sdg-t") as HTMLElement | null;
+        if (titleEl) titleEl.textContent = s.title;
+        sdgs.appendChild(chip);
+      }
+    }
+
+    const actors: [string, string, string][] = [];
+    if (d.lead_actor)
+      actors.push([
+        "cn",
+        commaList(d.lead_actor),
+        `Lead Chinese actor${d.lead_actor_type ? ` · ${d.lead_actor_type}` : ""}`,
+      ]);
+    if (d.colead_actor)
+      actors.push(["cn", commaList(d.colead_actor), "Co-lead Chinese actor"]);
+    if (d.collab_name)
+      actors.push([
+        "intl",
+        commaList(d.collab_name),
+        `Primary collaborator${d.collab_origin ? ` · ${commaList(d.collab_origin)}` : ""}`,
+      ]);
+    const actorsEl = pick("actors");
+    if (actorsEl) {
+      if (actors.length) {
+        for (const [type, name, role] of actors) {
+          const row = cloneItem(actorTpl);
+          row.querySelector(".dot")?.classList.add(type);
+          const nm = row.querySelector(".nm") as HTMLElement | null;
+          if (nm) nm.textContent = name;
+          const rl = row.querySelector(".rl") as HTMLElement | null;
+          if (rl) rl.textContent = role;
+          actorsEl.appendChild(row);
+        }
+      } else {
+        const p = document.createElement("p");
+        p.style.color = "var(--muted)";
+        p.textContent = "No actor data.";
+        actorsEl.appendChild(p);
+      }
+    }
+
+    show("weblink", !!d.website);
+    if (d.website) {
+      const a = pick("weblink") as HTMLAnchorElement | null;
+      if (a) a.href = d.website.split(" ")[0];
+    }
+
+    set("pager", `${navIndex + 1} of ${navList.length}`);
+    const prevBtn = frag.querySelector(
+      "[data-nav-prev]",
+    ) as HTMLButtonElement | null;
+    const nextBtn = frag.querySelector(
+      "[data-nav-next]",
+    ) as HTMLButtonElement | null;
+    if (prevBtn) prevBtn.disabled = navIndex <= 0;
+    if (nextBtn) nextBtn.disabled = navIndex >= navList.length - 1;
+
+    modalEl.replaceChildren(frag);
+  }
+
+  function openDetail(item: Initiative, list: Initiative[], index: number) {
+    if (!item) return;
+    navList = list.length ? list : [item];
+    navIndex = index >= 0 ? index : 0;
+    render();
+    modal.open();
+  }
+
+  function navigate(delta: number) {
+    const next = navIndex + delta;
+    if (next < 0 || next >= navList.length) return;
+    navIndex = next;
+    render();
+  }
+
+  document.addEventListener("cgel:open-detail", (e) => {
+    const { item, list, index } = (
+      e as CustomEvent<{ item: Initiative; list: Initiative[]; index: number }>
+    ).detail;
+    openDetail(item, list ?? [item], index ?? 0);
+  });
+
+  modalEl.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("[data-nav-prev]")) {
+      navigate(-1);
+      return;
+    }
+    if (target.closest("[data-nav-next]")) {
+      navigate(1);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (!overlayEl.classList.contains("open")) return;
+    if (e.key === "ArrowLeft") navigate(-1);
+    else if (e.key === "ArrowRight") navigate(1);
+  });
+</script>
+
+<style>
+  .modal {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 96px);
+  }
+
+  .modal :global(.mhead) {
+    flex: none;
+    padding: 28px 34px 22px;
+    background: linear-gradient(160deg, var(--teal-d), var(--teal));
+    color: var(--paper);
+    position: relative;
+  }
+  .modal :global(.mhead .code) {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    opacity: 0.7;
+    letter-spacing: 0.1em;
+  }
+  .modal :global(.mhead h2) {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 1.15;
+    margin: 8px 0 4px;
+  }
+  .modal :global(.mhead .zh) {
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  .modal :global(.mhead .modal-close) {
+    top: 20px;
+    right: 22px;
+  }
+  .modal :global(.mbadges) {
+    display: flex;
+    gap: 8px;
+    margin-top: 13px;
+    flex-wrap: wrap;
+  }
+  .modal :global(.mbadges .mb) {
+    font-size: 11px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    background: rgba(246, 245, 241, 0.16);
+    border: 1px solid rgba(246, 245, 241, 0.25);
+  }
+  .modal :global(.mbody) {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 34px 32px;
+  }
+  .modal :global(.mbody)::-webkit-scrollbar {
+    width: 5px;
+  }
+  .modal :global(.mbody)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .modal :global(.mbody)::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 4px;
+  }
+  .modal :global(.mbody h4) {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin: 22px 0 9px;
+  }
+  .modal :global(.mbody h4:first-child) {
+    margin-top: 0;
+  }
+  .modal :global(.mbody p) {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .modal :global(.kv) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px 22px;
+  }
+  .modal :global(.kv .k) {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .modal :global(.kv .v) {
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+  .modal :global(.sdgs) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .modal :global(.sdgs[hidden]) {
+    display: none;
+  }
+  .modal :global(.sdg) {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 11px 3px 7px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: #fff;
+    color: inherit;
+    font-size: 12px;
+    text-decoration: none;
+  }
+  .modal :global(.sdg:hover) {
+    border-color: var(--teal);
+  }
+  .modal :global(.sdg:focus-visible) {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  .modal :global(.sdg-n) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 11px;
+    flex: none;
+  }
+  .modal :global(.sdg-t) {
+    color: var(--ink-soft);
+  }
+  .modal :global(.actors) {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .modal :global(.actor) {
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    padding: 10px 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper2);
+  }
+  .modal :global(.actor .dot) {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .modal :global(.actor .dot.cn) {
+    background: var(--rust);
+  }
+  .modal :global(.actor .dot.intl) {
+    background: var(--teal);
+  }
+  .modal :global(.actor .nm) {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .modal :global(.actor .rl) {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .modal :global(.mhead .mlink) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--paper);
+    border-bottom: 1px solid rgba(246, 245, 241, 0.5);
+    padding-bottom: 1px;
+  }
+  .modal :global(.mhead .mlink:hover) {
+    border-bottom-color: var(--paper);
+  }
+  .modal :global(.mhead .mlink[hidden]) {
+    display: none;
+  }
+  .modal :global(.mfoot) {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 34px;
+    border-top: 1px solid var(--line);
+    background: var(--paper2);
+  }
+  .modal :global(.mfoot .pager) {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .modal :global(.mfoot .navbtns) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal :global(.mfoot .navbtn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--teal);
+  }
+  .modal :global(.mfoot .navbtn:hover:not(:disabled)) {
+    border-color: var(--teal);
+  }
+  .modal :global(.mfoot .navbtn:disabled) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .modal :global(.mfoot .navbtn svg),
+  .modal :global(.mfoot .navbtn svg *) {
+    pointer-events: none;
+  }
+  @media (max-width: 880px) {
+    .modal :global(.mhead) {
+      padding: 22px 20px 18px;
+    }
+    .modal :global(.mbody) {
+      padding: 20px 20px 26px;
+    }
+    .modal :global(.mfoot) {
+      padding: 12px 20px;
+    }
+    .modal :global(.kv) {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

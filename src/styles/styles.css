@@ -1,0 +1,271 @@
+:root {
+  --ink: #22313f;
+  --paper: #f5f7f9;
+  --paper2: #e8eef4;
+  --line: #cbd8e3;
+
+  --teal: #3b668b;
+  --teal-d: #254c70;
+  --slate: #577a9d;
+  --rust: #9a6848;
+  --muted: #667786;
+  --sky: #7fa3c1;
+
+  --ink-soft: #324452;
+
+  --mist: #eaf2f8;
+  --mist-2: #dbe8f2;
+
+  --hero-grad-2: #315f88;
+  --hero-grad-3: #3f74a0;
+  --hero-grad-4: #5b8db6;
+
+  --hero-eyebrow: #d2e4f3;
+  --hero-accent: #d8ebfa;
+  --hero-subtitle: #e2eef7;
+  --hero-stat: #c9dceb;
+
+  --font-serif: "Fraunces", serif;
+  --font-sans: "Spline Sans", sans-serif;
+  --font-mono: "Spline Sans Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.site-main {
+  flex: 1 0 auto;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+.serif {
+  font-family: var(--font-serif);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--teal-d);
+  outline-offset: 2px;
+}
+
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+section {
+  padding: 46px 0;
+}
+
+.prose {
+  max-width: 74ch;
+}
+
+.wrap:has(> .prose) {
+  max-width: 800px;
+}
+
+.wrap:has(> .prose) .prose {
+  max-width: none;
+}
+
+.prose p {
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  line-height: 1.65;
+}
+
+.prose h3 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--teal-d);
+  margin: 28px 0 10px;
+}
+
+.prose a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  color: var(--teal-d);
+}
+
+.wrap:has(> .prose) .section-head h2,
+.wrap:has(> .prose) .section-head p {
+  max-width: none;
+}
+
+.maptip {
+  position: absolute;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 12.5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  z-index: 5;
+}
+
+.maptip b {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 1px;
+}
+
+.btn {
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: 0.2s;
+}
+
+.btn:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.btn.primary {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--paper);
+}
+
+.btn.primary:hover {
+  background: var(--teal-d);
+  border-color: var(--teal-d);
+  color: var(--paper);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 42, 40, 0.55);
+  z-index: 2000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 20px;
+  overflow-y: auto;
+  backdrop-filter: blur(3px);
+}
+
+.overlay.open {
+  display: flex;
+}
+
+.modal {
+  background: var(--paper);
+  max-width: 760px;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: rise 0.3s ease;
+}
+
+.modal-close {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(246, 245, 241, 0.3);
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--paper);
+  cursor: pointer;
+  user-select: none;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.modal-close svg,
+.modal-close svg * {
+  pointer-events: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 600px) {
+  section {
+    padding: 32px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .wrap {
+    padding: 0 18px;
+  }
+}

@@ -1,0 +1,230 @@
+---
+import { ArrowRightIcon, BookOpenIcon } from "@lucide/astro";
+
+type HeroStat = readonly [number | string, string];
+
+type Props = {
+  heroStats: readonly HeroStat[];
+};
+
+const { heroStats } = Astro.props as Props;
+---
+
+<header class="home-hero">
+  <div class="wrap">
+    <div class="eyebrow">SGAIN project, University of Bath</div>
+    <h1 class="title">China's Global Environmental Leadership Database</h1>
+    <p class="subtitle">
+      First comprehensive database of China-led cross-border environmental
+      governance
+    </p>
+    <div class="hero-ctas">
+      <a class="hero-btn primary" href="/browse/">
+        Explore Dataset<ArrowRightIcon size={16} />
+      </a>
+      <a class="hero-btn secondary" href="/methodology/">
+        <BookOpenIcon size={16} />Read Methodology
+      </a>
+    </div>
+    <div class="stats" id="statbar">
+      {
+        heroStats.map(([number, label]) => (
+          <div class="stat">
+            <div class="n">{number}</div>
+            <div class="l">{label}</div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</header>
+
+<style>
+  .home-hero {
+    position: relative;
+    padding: 40px 0 30px;
+    color: #fff;
+    overflow: hidden;
+    background: linear-gradient(
+      165deg,
+      var(--teal-d) 0%,
+      var(--hero-grad-2) 35%,
+      var(--hero-grad-3) 70%,
+      var(--hero-grad-4) 100%
+    );
+  }
+
+  .home-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        900px 500px at 75% -20%,
+        rgba(255, 255, 255, 0.1),
+        transparent 60%
+      ),
+      radial-gradient(
+        700px 400px at 0% 120%,
+        rgba(0, 0, 0, 0.25),
+        transparent 55%
+      );
+    pointer-events: none;
+  }
+
+  .home-hero .wrap {
+    position: relative;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hero-eyebrow);
+    margin-bottom: 10px;
+  }
+
+  h1.title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(24px, 3.8vw, 40px);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+  }
+
+  h1.title em {
+    font-style: italic;
+    color: var(--hero-accent);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: clamp(15px, 1.6vw, 18px);
+    line-height: 1.5;
+    color: var(--hero-subtitle);
+  }
+
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .hero-btn.primary {
+    background: #fff;
+    color: var(--teal-d);
+  }
+
+  .hero-btn.primary:hover {
+    background: var(--mist);
+  }
+
+  .hero-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+  }
+
+  .hero-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: #fff;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-top: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .stat {
+    padding: 14px 18px;
+    border-right: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .stat:last-child {
+    border: none;
+  }
+
+  .stat .n {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 26px;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .stat .l {
+    font-size: 12px;
+    color: var(--hero-stat);
+    margin-top: 7px;
+  }
+
+  @media (max-width: 880px) {
+    .home-hero {
+      padding: 32px 0 26px;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+      background: none;
+    }
+
+    .stat,
+    .stat:last-child {
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .stat .n {
+      font-size: 24px;
+    }
+
+    .stat:last-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .home-hero {
+      padding: 28px 0 24px;
+    }
+
+    .eyebrow {
+      font-size: 10.5px;
+      letter-spacing: 0.05em;
+    }
+
+    .hero-ctas {
+      flex-direction: column;
+    }
+
+    .hero-btn {
+      justify-content: center;
+    }
+  }
+</style>

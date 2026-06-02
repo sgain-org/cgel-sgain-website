@@ -1,0 +1,17 @@
+---
+import ChartBox from "@/components/ChartBox.astro";
+import Section from "@/components/Section.astro";
+
+type Props = {
+  heatmapSvg: string;
+};
+
+const { heatmapSvg } = Astro.props as Props;
+---
+
+<Section
+  title="Governance Functions Across Multiple Levels"
+  subtitle="'Information sharing' and 'Capacity-building' emerged as key emphases. In contrast, the provision of funding remains consistently limited, setting China apart from traditional aid-based models of environmental cooperation."
+>
+  <ChartBox id="chart-heatmap" svg={heatmapSvg} />
+</Section>

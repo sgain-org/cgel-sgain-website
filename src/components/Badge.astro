@@ -1,0 +1,26 @@
+---
+interface Props {
+  status: string;
+}
+const { status } = Astro.props;
+---
+
+<span class={`badge b-${status}`}>{status}</span>
+
+<style>
+  .badge {
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .b-Ongoing {
+    background: rgba(29, 90, 95, 0.14);
+    color: var(--teal-d);
+  }
+  .b-Completed {
+    background: rgba(168, 90, 60, 0.14);
+    color: var(--rust);
+  }
+</style>

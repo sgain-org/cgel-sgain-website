@@ -1,0 +1,501 @@
+---
+import { MinusIcon, PlusIcon, RotateCcwIcon } from "@lucide/astro";
+import Section from "@/components/Section.astro";
+
+type Props = {
+  mapSvg: string;
+  mapYearDataJson: string;
+};
+
+const { mapSvg, mapYearDataJson } = Astro.props as Props;
+---
+
+<Section
+  title="Where China Collaborates"
+  subtitle="Countries shaded by the number of initiatives in which they are the primary international collaborator."
+>
+  <div class="yearbar">
+    <label for="ymin">From</label><span class="yv" id="y0">1980</span>
+    <div class="dualrange">
+      <div class="dr-rail"></div>
+      <div class="dr-fill" id="yfill" style="left: 0; width: 100%"></div>
+      <input
+        type="range"
+        id="ymin"
+        min="1980"
+        max="2024"
+        value="1980"
+        aria-label="From year"
+      />
+      <input
+        type="range"
+        id="ymax"
+        min="1980"
+        max="2024"
+        value="2024"
+        aria-label="To year"
+      />
+    </div>
+    <span class="yv" id="y1">2024</span><label for="ymax">To</label>
+  </div>
+  <div id="map">
+    <div class="mapzoom">
+      <button type="button" id="zoom-in" aria-label="Zoom in"
+        ><PlusIcon size={16} /></button
+      >
+      <button type="button" id="zoom-out" aria-label="Zoom out"
+        ><MinusIcon size={16} /></button
+      >
+      <button type="button" id="zoom-reset" aria-label="Reset view"
+        ><RotateCcwIcon size={15} /></button
+      >
+    </div>
+    <Fragment set:html={mapSvg} />
+  </div>
+</Section>
+
+<script
+  is:inline
+  type="application/json"
+  id="map-year-data"
+  set:html={mapYearDataJson}
+/>
+
+<script>
+  import * as d3 from "d3";
+  import { YEAR_MAX, YEAR_MIN } from "@/lib/constants";
+  import { MAP_RAMP } from "@/lib/viz";
+
+  interface MapYearDatum {
+    year: number | null;
+    countries: string[];
+  }
+
+  function initMap(): void {
+    const mapEl = document.getElementById("map");
+    const yminEl = document.getElementById("ymin") as HTMLInputElement | null;
+    const ymaxEl = document.getElementById("ymax") as HTMLInputElement | null;
+    const y0El = document.getElementById("y0");
+    const y1El = document.getElementById("y1");
+    const fillEl = document.getElementById("yfill");
+    const legendEl = document.getElementById("maplegend");
+    const mapDataEl = document.getElementById("map-year-data");
+
+    if (
+      !mapEl ||
+      !yminEl ||
+      !ymaxEl ||
+      !y0El ||
+      !y1El ||
+      !fillEl ||
+      !legendEl ||
+      !mapDataEl
+    ) {
+      return;
+    }
+
+    const yminInput = yminEl;
+    const ymaxInput = ymaxEl;
+    const y0Text = y0El;
+    const y1Text = y1El;
+    const fillBar = fillEl;
+    const legend = legendEl;
+
+    const mapData: MapYearDatum[] = JSON.parse(mapDataEl.textContent || "[]");
+    const filters = { ymin: YEAR_MIN, ymax: YEAR_MAX };
+    const yearSpan = YEAR_MAX - YEAR_MIN;
+
+    const tip = document.createElement("div");
+    tip.className = "maptip";
+    mapEl.appendChild(tip);
+
+    const countryPaths = [
+      ...mapEl.querySelectorAll<SVGPathElement>(".country"),
+    ];
+    const countryLabels = [
+      ...mapEl.querySelectorAll<SVGTextElement>(".isolbl"),
+    ];
+
+    function initiativeInYears(datum: MapYearDatum): boolean {
+      if (datum.year === null) return true;
+      return datum.year >= filters.ymin && datum.year <= filters.ymax;
+    }
+
+    function countryCounts(): Record<string, number> {
+      const counts: Record<string, number> = {};
+      mapData.filter(initiativeInYears).forEach((datum) => {
+        (datum.countries || []).forEach((country) => {
+          counts[country] = (counts[country] || 0) + 1;
+        });
+      });
+      return counts;
+    }
+
+    function renderMapLegend(maxCount: number): string {
+      const colour = d3.scaleSequential(MAP_RAMP).domain([0, maxCount]);
+      const barW = 12;
+      const barH = 110;
+      const pad = 4;
+      const steps = 40;
+      let rects = "";
+
+      for (let i = 0; i < steps; i++) {
+        rects += `<rect x="0" y="${pad + (barH * i) / steps}" width="${barW}" height="${barH / steps + 1}" fill="${colour(maxCount * (1 - i / steps))}"></rect>`;
+      }
+      const clip = `<clipPath id="maplegend-clip"><rect x="0" y="${pad}" width="${barW}" height="${barH}" rx="3"></rect></clipPath>`;
+
+      const scale = d3
+        .scaleLinear()
+        .domain([0, maxCount])
+        .range([pad + barH, pad]);
+      const ticks = scale
+        .ticks(7)
+        .map(
+          (value) =>
+            `<g class="tick" transform="translate(0,${scale(value)})"><line x2="3"></line><text x="6" dy=".32em">${d3.format("d")(value)}</text></g>`,
+        )
+        .join("");
+
+      return `<div class="maplegend-title">Collaborations</div><svg width="52" height="${barH + pad * 2}">${clip}<g clip-path="url(#maplegend-clip)">${rects}</g><g class="axis" transform="translate(${barW},0)">${ticks}</g></svg>`;
+    }
+
+    function paintMap(): void {
+      const counts = countryCounts();
+      const maxCount = Math.max(1, ...Object.values(counts));
+      const colour = d3.scaleSequential(MAP_RAMP).domain([0, maxCount]);
+
+      countryPaths.forEach((path) => {
+        const country = path.dataset.country || "";
+        const count = counts[country] || 0;
+        path.dataset.count = `${count}`;
+        path.setAttribute("fill", count ? String(colour(count)) : "#eef1f3");
+        path.classList.toggle("nodata", !count);
+      });
+
+      countryLabels.forEach((label) => {
+        const country = label.dataset.country || "";
+        label.style.display = counts[country] ? "" : "none";
+      });
+
+      legend.innerHTML = renderMapLegend(maxCount);
+    }
+
+    function syncYears(): void {
+      let fromYear = +yminInput.value;
+      let toYear = +ymaxInput.value;
+      if (fromYear > toYear) {
+        [fromYear, toYear] = [toYear, fromYear];
+      }
+
+      filters.ymin = fromYear;
+      filters.ymax = toYear;
+      y0Text.textContent = `${fromYear}`;
+      y1Text.textContent = `${toYear}`;
+
+      const lo = ((fromYear - YEAR_MIN) / yearSpan) * 100;
+      const hi = ((toYear - YEAR_MIN) / yearSpan) * 100;
+      fillBar.style.left = `${lo}%`;
+      fillBar.style.width = `${hi - lo}%`;
+
+      paintMap();
+    }
+
+    yminInput.addEventListener("input", syncYears);
+    ymaxInput.addEventListener("input", syncYears);
+
+    countryPaths.forEach((path) => {
+      path.addEventListener("mousemove", (ev) => {
+        const country = path.dataset.country || "";
+        const code = path.dataset.code || "";
+        const count = +(path.dataset.count || "0");
+
+        const name = document.createElement("b");
+        name.textContent = code ? `${country} (${code})` : country;
+        tip.replaceChildren(
+          name,
+          `${count} initiative${count !== 1 ? "s" : ""}`,
+        );
+        const rect = mapEl.getBoundingClientRect();
+        tip.style.left = `${ev.clientX - rect.left + 12}px`;
+        tip.style.top = `${ev.clientY - rect.top + 12}px`;
+        tip.style.opacity = "1";
+      });
+
+      path.addEventListener("mouseout", () => {
+        tip.style.opacity = "0";
+      });
+
+      path.addEventListener("click", () => {
+        const country = path.dataset.country || "";
+        const count = +(path.dataset.count || "0");
+        if (!count) return;
+        location.href = `/browse/?country=${encodeURIComponent(country)}`;
+      });
+    });
+
+    const svg = mapEl.querySelector<SVGSVGElement>("svg.map-svg");
+    const layer = svg?.querySelector<SVGGElement>("g.zoom-layer");
+    if (svg && layer) {
+      const LABEL_PX = 9.5;
+      const LABEL_STROKE = 2;
+      function scaleLabels(k: number): void {
+        const fs = `${LABEL_PX / k}px`;
+        const sw = `${LABEL_STROKE / k}px`;
+        for (const label of countryLabels) {
+          label.style.fontSize = fs;
+          label.style.strokeWidth = sw;
+        }
+      }
+
+      const viewBox = svg.viewBox.baseVal;
+      const sel = d3.select(svg);
+      const zoom = d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([1, 8])
+        .translateExtent([
+          [0, 0],
+          [viewBox.width, viewBox.height],
+        ])
+        .on("zoom", (event) => {
+          layer.setAttribute("transform", event.transform.toString());
+          scaleLabels(event.transform.k);
+        });
+
+      sel.call(zoom);
+      sel.on("dblclick.zoom", null);
+
+      const zoomInBtn = document.getElementById("zoom-in");
+      const zoomOutBtn = document.getElementById("zoom-out");
+      const zoomResetBtn = document.getElementById("zoom-reset");
+      zoomInBtn?.addEventListener("click", () => {
+        sel.transition().duration(200).call(zoom.scaleBy, 1.6);
+      });
+      zoomOutBtn?.addEventListener("click", () => {
+        sel
+          .transition()
+          .duration(200)
+          .call(zoom.scaleBy, 1 / 1.6);
+      });
+      zoomResetBtn?.addEventListener("click", () => {
+        sel.transition().duration(250).call(zoom.transform, d3.zoomIdentity);
+      });
+    }
+
+    paintMap();
+  }
+
+  initMap();
+</script>
+
+<style>
+  .yearbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    background: var(--paper2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .yearbar label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rust);
+    font-family: var(--font-mono);
+  }
+  .yearbar .yv {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--teal-d);
+    min-width: 54px;
+    text-align: center;
+  }
+  .dualrange {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    height: 22px;
+  }
+  .dr-rail,
+  .dr-fill {
+    position: absolute;
+    top: 50%;
+    height: 4px;
+    border-radius: 2px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .dr-rail {
+    left: 0;
+    right: 0;
+    background: var(--line);
+  }
+  .dr-fill {
+    background: var(--teal);
+  }
+  .dualrange input[type="range"] {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 16px;
+    margin: 0;
+    transform: translateY(-50%);
+    background: none;
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: none;
+  }
+  .dualrange input[type="range"]::-webkit-slider-runnable-track {
+    background: none;
+    height: 16px;
+  }
+  .dualrange input[type="range"]::-moz-range-track {
+    background: none;
+    height: 16px;
+  }
+  .dualrange input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: auto;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--teal);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+  }
+  .dualrange input[type="range"]::-moz-range-thumb {
+    pointer-events: auto;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--teal);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+  }
+  .dualrange input[type="range"]:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--teal-d);
+    outline-offset: 2px;
+  }
+  #map {
+    height: 540px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--mist-2);
+    position: relative;
+    overflow: hidden;
+  }
+  #map :global(svg.map-svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  #map :global(svg.map-svg):active {
+    cursor: grabbing;
+  }
+  .mapzoom {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mapzoom button {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .mapzoom button:hover {
+    color: var(--teal-d);
+    border-color: var(--slate);
+  }
+  #map :global(.country) {
+    stroke: #ffffff;
+    stroke-width: 0.4px;
+    cursor: pointer;
+    transition: fill 0.15s;
+  }
+  #map :global(.country.nodata) {
+    cursor: default;
+  }
+  #map :global(.country:hover) {
+    stroke: var(--rust);
+    stroke-width: 1.3px;
+  }
+  #map :global(.isolbl) {
+    font: 600 9.5px var(--font-mono);
+    fill: #fff;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 2px;
+    pointer-events: none;
+  }
+  #map :global(.maplegend) {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 11.5px;
+    line-height: 1.7;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  #map :global(.maplegend-title) {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  #map :global(.maplegend text) {
+    font-size: 10px;
+    fill: var(--ink);
+  }
+  #map :global(.maplegend .tick line) {
+    stroke: var(--line);
+  }
+  #map :global(.maplegend svg) {
+    width: 52px;
+    height: 118px;
+    display: block;
+  }
+  @media (max-width: 600px) {
+    .yearbar {
+      flex-wrap: nowrap;
+      gap: 10px;
+      padding: 12px;
+    }
+    .yearbar label {
+      display: none;
+    }
+    .yearbar .yv {
+      min-width: 44px;
+      font-size: 18px;
+    }
+    .dualrange {
+      min-width: 0;
+    }
+  }
+</style>

@@ -1,0 +1,23 @@
+---
+interface Props {
+  variant?: string;
+}
+const { variant } = Astro.props;
+---
+
+<span class={`tag${variant ? ` ${variant}` : ""}`}><slot /></span>
+
+<style>
+  .tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink-soft);
+  }
+  .tag.t-region {
+    border-color: rgba(29, 90, 95, 0.3);
+    color: var(--teal);
+  }
+</style>

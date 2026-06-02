@@ -1,0 +1,90 @@
+---
+import { CheckIcon } from "@lucide/astro";
+import { CITATION_TEXT, DOI_URL } from "@/lib/constants";
+---
+
+<div class="citebox">
+  <div class="lbl">Recommended citation</div>
+  {CITATION_TEXT}
+  <a href={DOI_URL} target="_blank" rel="noopener">{DOI_URL}</a>
+  <div>
+    <button type="button" class="copybtn" data-copy-cite>Copy citation</button>
+    <button type="button" class="copybtn" data-copy-bibtex
+      >Copy as BibTeX</button
+    >
+  </div>
+  <template class="citecheck"><CheckIcon size={15} /></template>
+</div>
+
+<script>
+  import { BIBTEX, CITATION } from "@/lib/constants";
+import { copyWithFeedback } from "@/lib/dom";
+
+  document.addEventListener("click", (e) => {
+    const card = (e.target as HTMLElement).closest(".citebox");
+    if (!card) return;
+
+    const checkSvg = card.querySelector(".citecheck")?.innerHTML ?? "";
+    const target = e.target as HTMLElement;
+
+    const citeBtn = target.closest<HTMLElement>("[data-copy-cite]");
+    if (citeBtn) {
+      copyWithFeedback(citeBtn, CITATION, "Copy citation", checkSvg);
+      return;
+    }
+    const bibtexBtn = target.closest<HTMLElement>("[data-copy-bibtex]");
+    if (bibtexBtn) {
+      copyWithFeedback(bibtexBtn, BIBTEX, "Copy as BibTeX", checkSvg);
+    }
+  });
+</script>
+
+<style>
+  .citebox {
+    margin: 16px 0;
+    padding: 18px 20px;
+    background: var(--paper2);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--teal);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .citebox .lbl {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 8px;
+  }
+  .citebox a {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    word-break: break-all;
+    color: var(--teal);
+    text-decoration: none;
+  }
+  .citebox a:hover {
+    color: var(--teal-d);
+  }
+  .copybtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+    margin-top: 10px;
+    margin-right: 8px;
+    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--teal);
+  }
+</style>

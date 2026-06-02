@@ -1,0 +1,137 @@
+---
+import { CONTACT_EMAIL } from "@/lib/constants";
+
+const year = new Date().getFullYear();
+const contactHref = `mailto:${CONTACT_EMAIL}`;
+
+const partners = [
+  {
+    href: "https://sgain.org",
+    label: "SGAIN homepage",
+    logo: "/logos/SGAIN_Logo_full.png",
+    name: "SGAIN",
+  },
+  {
+    href: "https://www.bath.ac.uk",
+    label: "University of Bath homepage",
+    logo: "/logos/Uni_of_Bath_logo.png",
+    name: "University of Bath",
+  },
+];
+---
+
+<footer class="site-footer">
+  <div class="wrap footer-wrap">
+    <div class="footer-main">
+      <div class="footer-copy">
+        <strong class="serif footer-brand">CGEL Database</strong>
+        <span class="footer-tagline"
+          >China's Global Environmental Leadership</span
+        >
+        <nav class="footer-actions" aria-label="Footer links">
+          <span>
+            Funded by{" "}<a
+              href="https://www.ukri.org/"
+              target="_blank"
+              rel="noopener noreferrer">UKRI</a
+            >
+          </span>
+          <a href={contactHref}>{CONTACT_EMAIL}</a>
+        </nav>
+      </div>
+      <nav class="footer-partners" aria-label="Partner organisations">
+        {
+          partners.map((partner) => (
+            <a
+              href={partner.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="partner-logo"
+              aria-label={partner.label}
+            >
+              <img src={partner.logo} alt={partner.name} />
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      © {year} CGEL Database · SGAIN project, University of Bath
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--line);
+    padding: 36px 0;
+    margin-top: 24px;
+    background: var(--paper2);
+  }
+  .footer-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .footer-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .footer-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .footer-brand {
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .footer-tagline {
+    display: block;
+  }
+  .footer-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    margin-top: 8px;
+  }
+  .footer-actions a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .footer-actions a:hover {
+    color: var(--teal);
+  }
+  .footer-partners {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .partner-logo img {
+    height: 40px;
+    width: auto;
+    max-width: 100%;
+    display: block;
+    object-fit: contain;
+  }
+  .footer-bottom {
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  @media (max-width: 600px) {
+    .footer-partners {
+      justify-content: flex-start;
+    }
+  }
+</style>

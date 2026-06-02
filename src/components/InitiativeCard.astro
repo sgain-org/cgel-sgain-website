@@ -1,0 +1,99 @@
+---
+import Badge from "@/components/Badge.astro";
+import Tag from "@/components/Tag.astro";
+import type { Initiative } from "@/lib/types";
+
+interface Props {
+  initiative: Initiative;
+}
+const { initiative: d } = Astro.props;
+---
+
+<div
+  class="card"
+  data-code={d.code}
+  data-type={d.type_primary}
+  data-region={d.region}
+  data-problem={d.problem1}
+  data-gov={d.governance}
+  data-countries={(d.countries || []).join("|")}
+>
+  <div class="ctop">
+    <span class="code">CGEL-{d.code} · {d.start_year || "—"}</span>
+    {d.status && <Badge status={d.status} />}
+  </div>
+  <h3>
+    {d.name}
+    {
+      d.acronym && (
+        <span style="color:var(--muted);font-weight:400"> ({d.acronym})</span>
+      )
+    }
+  </h3>
+  {d.name_zh && <div class="zh">{d.name_zh}</div>}
+  <div class="desc">{d.description || "—"}</div>
+  <div class="meta">
+    {d.region && <Tag variant="t-region">{d.region}</Tag>}
+    {d.type_primary && <Tag>{d.type_primary}</Tag>}
+    {d.problem1 && <Tag>{d.problem1}</Tag>}
+  </div>
+</div>
+
+<style>
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 18px;
+    background: var(--paper2);
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    border-color: var(--teal);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(18, 58, 61, 0.09);
+  }
+  .card.hidden {
+    display: none;
+  }
+  .ctop {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+  .code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.22;
+    margin-bottom: 5px;
+  }
+  .zh {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 9px;
+  }
+  .desc {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 11px;
+  }
+</style>

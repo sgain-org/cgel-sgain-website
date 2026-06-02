@@ -1,0 +1,77 @@
+---
+import CalloutCard from "@/components/CalloutCard.astro";
+import CitationCard from "@/components/CitationCard.astro";
+import Section from "@/components/Section.astro";
+import Layout from "@/layouts/Layout.astro";
+import { DOI_URL, FEEDBACK_FORM_URL, FEEDBACK_MAILTO } from "@/lib/constants";
+---
+
+<Layout
+  title="About & Cite — CGEL Database"
+  description="About the CGEL database and the SGAIN project, how to cite it, where to access the data, the team behind it, and how to send feedback or flag missing cases."
+>
+  <Section title="About & Citation">
+    <div class="prose">
+      <h3>About the Database</h3>
+      <p>
+        The China's Global Environmental Leadership (CGEL) database is the first
+        and most comprehensive database that gathers granular data on
+        cross-border environmental governance initiatives led by Chinese state
+        and non-state actors in the 21st century. It systematically collects key
+        information on efforts by Chinese actors to lead governance initiatives
+        addressing different environmental issues through multilateral,
+        bilateral, and transnational channels.
+      </p>
+
+      <h3>About the SGAIN Project</h3>
+      <p>
+        The database is produced as part of the{" "}
+        <a href="https://sgain.org" target="_blank" rel="noopener"
+          >SGAIN project</a
+        >
+        — <em
+          >Sustainability Governance of China's Global Infrastructure
+          Investments</em
+        >
+        — a £1.7 million UKRI-funded research programme led by Prof Yixian Sun at
+        the University of Bath (grant number: MR/X035956/1). SGAIN integrates innovative
+        mixed methods to assess China's efforts to promote green development through
+        overseas infrastructure investments and also environmental and social impacts
+        of key Chinese projects in different host contexts across the Global South.
+        The CGEL database is one of the project's core research outputs, intended
+        as an open resource for researchers, policymakers, and practitioners.
+      </p>
+
+      <h3>How to Cite</h3>
+      <CitationCard />
+
+      <h3>Access &amp; Data</h3>
+      <p>
+        The full dataset and codebook are openly available from the University
+        of Bath Research Data Archive:{" "}
+        <a href={DOI_URL} target="_blank" rel="noopener">
+          {DOI_URL.replace("https://", "")}</a
+        >. We recommend downloading the database and codebook from this single,
+        citable location.
+      </p>
+
+      <h3>Contact Us</h3>
+      <p>
+        Is there an initiative we've missed, or do you have feedback on the data
+        or methodology? We'd be glad to hear from you — your input helps us keep
+        the database accurate and complete.
+      </p>
+      <CalloutCard
+        title="Suggest a missing case or share feedback"
+        href={FEEDBACK_FORM_URL}
+        cta="Open the form"
+        external
+        secondaryHref={FEEDBACK_MAILTO}
+        secondaryCta="Prefer email?"
+      >
+        Tell us about initiatives we should add, corrections to existing
+        entries, or general comments via our short online form.
+      </CalloutCard>
+    </div>
+  </Section>
+</Layout>

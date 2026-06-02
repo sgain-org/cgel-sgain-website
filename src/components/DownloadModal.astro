@@ -1,0 +1,228 @@
+---
+import { DownloadIcon, XIcon } from "@lucide/astro";
+import { ORGANISATION_TYPES } from "@/lib/constants";
+---
+
+<div class="overlay" id="dlOverlay">
+  <div
+    class="modal dlmodal"
+    id="dlModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dlTitle"
+  >
+    <div class="dlhead">
+      <button class="modal-close" type="button" data-close aria-label="Close"
+        ><XIcon size={18} /></button
+      >
+      <h2 id="dlTitle">Before you download</h2>
+      <p>
+        Please share a few details to help us understand who uses the CGEL
+        Database before downloading your selection.
+      </p>
+    </div>
+    <form class="dlbody" id="dlForm">
+      <label class="dlfield">
+        <span>Name</span>
+        <input
+          type="text"
+          id="dlName"
+          name="name"
+          autocomplete="name"
+          placeholder="Your name"
+          required
+        />
+      </label>
+      <label class="dlfield">
+        <span>Email</span>
+        <input
+          type="email"
+          id="dlEmail"
+          name="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+          required
+        />
+      </label>
+      <label class="dlfield">
+        <span>Type of organisation</span>
+        <select id="dlOrganisation" name="organisation" required>
+          <option value="">Select…</option>
+          {ORGANISATION_TYPES.map((t) => <option value={t}>{t}</option>)}
+        </select>
+      </label>
+      <div class="dlactions">
+        <button type="submit" class="btn primary" id="dlSubmit">
+          <DownloadIcon size={15} /> Submit &amp; download
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  import { DOWNLOAD_FORM } from "@/lib/constants";
+  import { createModal } from "@/lib/modal";
+
+  const DL_INFO_KEY = "cgel_dl_info";
+
+  type StoredInfo = { name: string; email: string; organisation: string };
+  type DownloadRequestDetail = { filters?: string };
+  const dlOverlayEl = document.getElementById("dlOverlay") as HTMLElement;
+  const dlForm = document.getElementById("dlForm") as HTMLFormElement;
+  const dlNameEl = document.getElementById("dlName") as HTMLInputElement;
+  const dlEmailEl = document.getElementById("dlEmail") as HTMLInputElement;
+  const dlOrganisationEl = document.getElementById(
+    "dlOrganisation",
+  ) as HTMLSelectElement;
+  let pendingFilters = "";
+
+  function fireReady(): void {
+    document.dispatchEvent(new CustomEvent("cgel:download-ready"));
+  }
+
+  function readStoredInfo(): StoredInfo | null {
+    try {
+      const raw = localStorage.getItem(DL_INFO_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<StoredInfo>;
+      return {
+        name: typeof parsed.name === "string" ? parsed.name : "",
+        email: typeof parsed.email === "string" ? parsed.email : "",
+        organisation:
+          typeof parsed.organisation === "string" ? parsed.organisation : "",
+      };
+    } catch {
+      return null;
+    }
+  }
+  function rememberDlInfo(info: StoredInfo): void {
+    try {
+      localStorage.setItem(DL_INFO_KEY, JSON.stringify(info));
+    } catch {
+      // ignore
+    }
+  }
+  const modal = createModal(dlOverlayEl, {
+    onOpen: () => {
+      const saved = readStoredInfo();
+      if (saved) {
+        dlNameEl.value = saved.name;
+        dlEmailEl.value = saved.email;
+        dlOrganisationEl.value = saved.organisation;
+      }
+      dlNameEl.focus();
+    },
+  });
+
+  function sendDownloadInfo(): void {
+    const body = new URLSearchParams();
+    body.set(DOWNLOAD_FORM.fields.name, dlNameEl.value.trim());
+    body.set(DOWNLOAD_FORM.fields.email, dlEmailEl.value.trim());
+    body.set(DOWNLOAD_FORM.fields.organisation, dlOrganisationEl.value);
+    body.set(DOWNLOAD_FORM.fields.filters, pendingFilters);
+    void fetch(DOWNLOAD_FORM.action, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    }).catch(() => undefined);
+  }
+
+  document.addEventListener("cgel:request-download", (event) => {
+    const detail =
+      event instanceof CustomEvent
+        ? (event.detail as DownloadRequestDetail | undefined)
+        : undefined;
+    pendingFilters = typeof detail?.filters === "string" ? detail.filters : "";
+    modal.open();
+  });
+
+  dlForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = dlNameEl.value.trim();
+    const email = dlEmailEl.value.trim();
+    dlNameEl.value = name;
+    dlEmailEl.value = email;
+    if (!dlForm.checkValidity()) {
+      dlForm.reportValidity();
+      return;
+    }
+    sendDownloadInfo();
+    rememberDlInfo({ name, email, organisation: dlOrganisationEl.value });
+    modal.close();
+    fireReady();
+  });
+</script>
+
+<style>
+  #dlOverlay {
+    align-items: center;
+  }
+  .dlmodal {
+    max-width: 460px;
+  }
+  .dlhead {
+    position: relative;
+    padding: 26px 30px 18px;
+    background: linear-gradient(160deg, var(--teal-d), var(--teal));
+    color: var(--paper);
+  }
+  .dlhead h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .dlhead p {
+    font-size: 13px;
+    line-height: 1.55;
+    opacity: 0.9;
+    margin: 0;
+  }
+  .dlhead .modal-close {
+    top: 18px;
+    right: 20px;
+  }
+  .dlbody {
+    padding: 22px 30px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .dlfield {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .dlfield > span:first-child {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rust);
+    font-family: var(--font-mono);
+  }
+  .dlfield input,
+  .dlfield select {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .dlfield input:focus,
+  .dlfield select:focus {
+    outline: none;
+    border-color: var(--teal);
+  }
+  .dlactions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+</style>

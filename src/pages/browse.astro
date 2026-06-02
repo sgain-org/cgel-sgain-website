@@ -1,0 +1,1253 @@
+---
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
+  LayoutGridIcon,
+  SearchIcon,
+  SearchXIcon,
+  TableIcon,
+  XIcon,
+} from "@lucide/astro";
+import Badge from "@/components/Badge.astro";
+import DetailModal from "@/components/DetailModal.astro";
+import DownloadModal from "@/components/DownloadModal.astro";
+import InitiativeCard from "@/components/InitiativeCard.astro";
+import Section from "@/components/Section.astro";
+import Layout from "@/layouts/Layout.astro";
+import { DOI_URL } from "@/lib/constants";
+import { facetCounts, readInitiatives } from "@/lib/data.server";
+import { parseSdgs } from "@/lib/sdgs";
+
+const initiatives = readInitiatives();
+const initiativeCount = initiatives.length;
+
+const sdgFacetCounts = (data: typeof initiatives): [string, number][] => {
+  const counts = new Map<string, number>();
+
+  for (const d of data) {
+    for (const { label } of parseSdgs(d.sdg)) {
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()].sort((a, b) => {
+    const an = Number(a[0].match(/^SDG\s+(\d+)/)?.[1] ?? 0);
+    const bn = Number(b[0].match(/^SDG\s+(\d+)/)?.[1] ?? 0);
+    return an - bn || a[0].localeCompare(b[0]);
+  });
+};
+
+const FACETS = [
+  ...(
+    [
+      ["Initiative type", "type_primary", "type"],
+      ["Region", "region", "region"],
+      ["Environmental issue", "problem1", "problem"],
+      ["Governance level", "governance", "gov"],
+      ["Country", "countries", "country"],
+    ] as const
+  ).map(([label, field, key]) => ({
+    label,
+    key,
+    opts: facetCounts(initiatives, field),
+  })),
+  {
+    label: "SDG",
+    key: "sdg",
+    opts: sdgFacetCounts(initiatives),
+  },
+];
+
+const COLS: [string, string][] = [
+  ["code", "ID"],
+  ["name", "Initiative"],
+  ["collab_country", "Collaborator"],
+  ["start_year", "Year"],
+  ["type_primary", "Type"],
+  ["status", "Status"],
+];
+
+const dataJson = JSON.stringify(initiatives).replace(/</g, "\\u003c");
+---
+
+<Layout
+  title="Browse — CGEL Database"
+  description={`Search and filter ${initiativeCount} China-led cross-border environmental governance initiatives by type, region, environmental issue, and governance level.`}
+>
+  <Section
+    title="Browse the Database"
+    subtitle={`Search and filter ${initiativeCount} initiatives across type, region, environmental issue, and governance level.`}
+  >
+    <div class="browse-layout">
+      <div class="browse-main">
+        <div class="toolbar">
+          <div class="searchbar-wrap">
+            <span class="searchbar-ico" aria-hidden="true">
+              <SearchIcon size={16} />
+            </span>
+            <input
+              class="searchbar"
+              id="search"
+              placeholder="Search initiative name, acronym, or actor…"
+            />
+          </div>
+          <div class="viewtog">
+            <button type="button" id="vcard" class="on"
+              ><LayoutGridIcon size={15} /> Cards</button
+            ><button type="button" id="vtable"
+              ><TableIcon size={15} /> Table</button
+            >
+          </div>
+          <a
+            href={DOI_URL}
+            class="btn export-btn"
+            id="exportBtn"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="export-ico ico-full" aria-hidden="true">
+              <ExternalLinkIcon size={15} />
+            </span>
+            <span class="export-ico ico-filtered" aria-hidden="true">
+              <DownloadIcon size={15} />
+            </span>
+            <span class="export-label label-full">View full dataset</span>
+            <span class="export-label label-filtered">
+              Export filtered dataset
+            </span>
+          </a>
+        </div>
+        <div class="filterbar" id="filters">
+          {
+            FACETS.map((g) => (
+              <div class="facet" data-facet={g.key}>
+                <button
+                  type="button"
+                  class="facet-btn"
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-controls={`pop-${g.key}`}
+                  data-facet-btn={g.key}
+                >
+                  <span class="fb-label">{g.label}</span>
+                  <span class="fb-count" data-facet-count={g.key} hidden />
+                  <span class="fb-chev" aria-hidden="true">
+                    <ChevronDownIcon size={15} />
+                  </span>
+                </button>
+                <fieldset
+                  class="popover"
+                  id={`pop-${g.key}`}
+                  aria-label={g.label}
+                  hidden
+                >
+                  {g.key === "country" && (
+                    <div class="pop-search">
+                      <input
+                        type="text"
+                        class="pop-search-input"
+                        data-pop-search={g.key}
+                        placeholder="Filter countries…"
+                        aria-label="Filter country options"
+                      />
+                    </div>
+                  )}
+                  <div class="pop-list">
+                    {g.opts.map(([v, c]) => (
+                      <label class="fopt">
+                        <input type="checkbox" value={v} data-key={g.key} />
+                        <span class="fopt-text">{v}</span>
+                        <span class="ct">{c}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
+            ))
+          }
+        </div>
+        <div class="resultbar">
+          <span id="rcount"></span>
+          <span>
+            <span id="activeChips"></span>
+            <button type="button" class="clearbtn" id="clearBtn"
+              >Clear all</button
+            >
+          </span>
+        </div>
+        <div class="cards" id="cards">
+          {initiatives.map((d) => <InitiativeCard initiative={d} />)}
+        </div>
+        <div id="tablewrap" class="hidden">
+          <table>
+            <thead>
+              <tr>
+                {
+                  COLS.map(([f, l]) => (
+                    <th data-sort={f}>
+                      {l}
+                      <span class="sort-ind" aria-hidden="true" />
+                    </th>
+                  ))
+                }
+              </tr>
+            </thead>
+            <tbody>
+              {
+                initiatives.map((d) => (
+                  <tr data-code={d.code}>
+                    <td>
+                      <span class="code">CGEL-{d.code}</span>
+                    </td>
+                    <td>
+                      <strong>{d.name}</strong>
+                      {d.acronym ? ` (${d.acronym})` : ""}
+                    </td>
+                    <td>{(d.countries || []).join(", ") || "—"}</td>
+                    <td>{d.start_year || "—"}</td>
+                    <td>{d.type_primary || "—"}</td>
+                    <td>{d.status ? <Badge status={d.status} /> : "—"}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <div id="emptyState" class="emptystate hidden">
+          <span class="emptystate-ico" aria-hidden="true">
+            <SearchXIcon size={40} />
+          </span>
+          <p class="emptystate-title">No initiatives match your filters</p>
+          <p class="emptystate-sub">
+            Try a different search term or remove some filters.
+          </p>
+          <button type="button" class="btn" id="emptyClearBtn">
+            Clear all filters
+          </button>
+        </div>
+        <div id="facet-popover-layer"></div>
+      </div>
+    </div>
+  </Section>
+
+  <DetailModal />
+  <DownloadModal />
+
+  <template id="ico-chev-up"><ChevronUpIcon size={13} /></template>
+  <template id="ico-chev-down"><ChevronDownIcon size={13} /></template>
+  <template id="ico-x"><XIcon size={18} /></template>
+
+  <script
+    is:inline
+    type="application/json"
+    id="initiatives-data"
+    set:html={dataJson}
+  />
+</Layout>
+
+<script>
+  import { parseSdgs } from "@/lib/sdgs";
+  import { createInitiativeSearch } from "@/lib/search";
+  import type { Initiative } from "@/lib/types";
+
+  const esc = (s: unknown): string =>
+    `"${String(s ?? "").replace(/"/g, '""')}"`;
+
+  const filtersEl = document.getElementById("filters")!;
+  const cardsEl = document.getElementById("cards")!;
+  const tableEl = document.getElementById("tablewrap")!;
+  const emptyEl = document.getElementById("emptyState")!;
+  const tbody = tableEl.querySelector("tbody")!;
+  const thead = tableEl.querySelector("thead")!;
+  const rcountEl = document.getElementById("rcount")!;
+  const searchEl = document.getElementById("search") as HTMLInputElement;
+  const activeChipsEl = document.getElementById("activeChips")!;
+  const facetBtns = [
+    ...filtersEl.querySelectorAll<HTMLButtonElement>("[data-facet-btn]"),
+  ];
+
+  const DOWNLOAD_FILTER_LABEL: Record<string, string> = {
+    country: "Country",
+    type: "Initiative type",
+    region: "Region",
+    problem: "Environmental issue",
+    gov: "Governance level",
+    sdg: "SDG",
+  };
+
+  const chevUpTpl = document.getElementById(
+    "ico-chev-up",
+  ) as HTMLTemplateElement;
+  const chevDownTpl = document.getElementById(
+    "ico-chev-down",
+  ) as HTMLTemplateElement;
+  const closeIconTpl = document.getElementById("ico-x") as HTMLTemplateElement;
+
+  const DATA: Initiative[] = JSON.parse(
+    document.getElementById("initiatives-data")!.textContent || "[]",
+  );
+  const byCode = new Map(DATA.map((d) => [d.code, d]));
+
+  const cards = [...cardsEl.querySelectorAll<HTMLElement>(".card")];
+  const cardFor = new Map<string, HTMLElement>();
+  for (const c of cards) cardFor.set(c.dataset.code!, c);
+  const rowFor = new Map<string, HTMLElement>();
+  tbody.querySelectorAll<HTMLElement>("tr[data-code]").forEach((tr) => {
+    rowFor.set(tr.dataset.code!, tr);
+  });
+
+  const active: Record<string, Set<string>> = {
+    type: new Set(),
+    region: new Set(),
+    problem: new Set(),
+    gov: new Set(),
+    country: new Set(),
+    sdg: new Set(),
+  };
+  const searchInitiatives = createInitiativeSearch(DATA);
+  let q = "";
+  let matchedCodes: Set<string> | null = null;
+  let rank: string[] = [];
+  let sortField: string | null = null;
+  let sortDir = 1;
+  let currentView: "card" | "table" = "card";
+  let resultCount = DATA.length;
+
+  function syncView() {
+    const empty = resultCount === 0;
+    emptyEl.classList.toggle("hidden", !empty);
+    cardsEl.classList.toggle("hidden", empty || currentView !== "card");
+    tableEl.classList.toggle("hidden", empty || currentView !== "table");
+  }
+
+  function setQuery(value: string) {
+    q = value.trim();
+    if (!q) {
+      matchedCodes = null;
+      rank = [];
+      return;
+    }
+    rank = searchInitiatives(q);
+    matchedCodes = new Set(rank);
+  }
+
+  function isFiltered(): boolean {
+    return q !== "" || Object.values(active).some((set) => set.size > 0);
+  }
+
+  function downloadFilterSummary(): string {
+    const lines: string[] = [];
+    if (q) lines.push(`Search: ${q}`);
+    for (const key of [
+      "country",
+      "type",
+      "region",
+      "problem",
+      "gov",
+      "sdg",
+    ] as const) {
+      const values = [...active[key]];
+      if (values.length) {
+        lines.push(`${DOWNLOAD_FILTER_LABEL[key]}: ${values.join(", ")}`);
+      }
+    }
+    lines.push(`Matching initiatives: ${resultCount}`);
+    return lines.join("\n");
+  }
+
+  const exportBtn = document.getElementById("exportBtn") as HTMLAnchorElement;
+  function updateExportState() {
+    const filtered = isFiltered();
+    exportBtn.classList.toggle("is-download", filtered);
+    exportBtn.title = filtered
+      ? "Download your current filtered selection as CSV"
+      : "Open the full dataset at the University of Bath Research Data Archive";
+  }
+
+  function syncUrl() {
+    const params = new URLSearchParams();
+    for (const key of [
+      "type",
+      "region",
+      "problem",
+      "gov",
+      "country",
+      "sdg",
+    ] as const) {
+      for (const value of active[key]) params.append(key, value);
+    }
+    if (q) params.set("q", q);
+    const qs = params.toString();
+    history.replaceState(
+      null,
+      "",
+      qs ? `${location.pathname}?${qs}` : location.pathname,
+    );
+  }
+
+  function cardMatches(el: HTMLElement): boolean {
+    const ds = el.dataset;
+    for (const key of ["type", "region", "problem", "gov"] as const) {
+      const set = active[key];
+      if (set.size && !set.has(ds[key] || "")) return false;
+    }
+    if (active.country.size) {
+      const cs = (ds.countries || "").split("|");
+      if (!cs.some((c) => active.country.has(c))) return false;
+    }
+    if (active.sdg.size) {
+      const initiative = byCode.get(ds.code || "");
+      const labels = parseSdgs(initiative?.sdg ?? "").map((s) => s.label);
+      if (!labels.some((label) => active.sdg.has(label))) return false;
+    }
+    if (matchedCodes && !matchedCodes.has(ds.code || "")) return false;
+    return true;
+  }
+
+  function applyFilters() {
+    let n = 0;
+    for (const card of cards) {
+      const show = cardMatches(card);
+      card.classList.toggle("hidden", !show);
+      rowFor.get(card.dataset.code!)?.classList.toggle("hidden", !show);
+      if (show) n++;
+    }
+    rcountEl.textContent = `${n} initiative${n !== 1 ? "s" : ""}`;
+    resultCount = n;
+    syncView();
+    updateExportState();
+    updateFilterCount();
+    renderChips();
+    applyOrder();
+    syncUrl();
+  }
+
+  function applyOrder() {
+    if (q && rank.length) {
+      for (const code of rank) {
+        const card = cardFor.get(code);
+        if (card) cardsEl.appendChild(card);
+        const row = rowFor.get(code);
+        if (row) tbody.appendChild(row);
+      }
+    } else {
+      for (const d of DATA) {
+        const card = cardFor.get(d.code);
+        if (card) cardsEl.appendChild(card);
+      }
+      applySort();
+    }
+  }
+
+  function updateFilterCount() {
+    for (const btn of facetBtns) {
+      const key = btn.dataset.facetBtn!;
+      const n = active[key]?.size ?? 0;
+      const badge = btn.querySelector<HTMLElement>("[data-facet-count]");
+      if (badge) {
+        badge.textContent = String(n);
+        badge.hidden = n === 0;
+      }
+      btn.classList.toggle("on", n > 0);
+    }
+  }
+
+  function renderChips() {
+    const chips: HTMLElement[] = [];
+    for (const key of [
+      "country",
+      "type",
+      "region",
+      "problem",
+      "gov",
+      "sdg",
+    ] as const) {
+      for (const value of active[key]) {
+        const chip = document.createElement("span");
+        chip.className = "activefilter";
+        chip.append(value);
+        const close = document.createElement("b");
+        close.dataset.chipKey = key;
+        close.dataset.chipValue = value;
+        close.role = "button";
+        close.ariaLabel = `Remove ${value} filter`;
+        close.append(closeIconTpl.content.cloneNode(true));
+        chip.append(close);
+        chips.push(chip);
+      }
+    }
+    activeChipsEl.replaceChildren(...chips);
+  }
+
+  activeChipsEl.addEventListener("click", (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>("[data-chip-key]");
+    if (!b) return;
+    const key = b.dataset.chipKey!;
+    const value = b.dataset.chipValue!;
+    active[key]?.delete(value);
+    const box = filtersEl.querySelector<HTMLInputElement>(
+      `input[data-key="${key}"][value="${CSS.escape(value)}"]`,
+    );
+    if (box) box.checked = false;
+    applyFilters();
+  });
+
+  const popoverFor = (btn: HTMLButtonElement): HTMLElement =>
+    document.getElementById(btn.getAttribute("aria-controls")!)!;
+
+  // On mobile the filter bar scrolls horizontally; iOS Safari clips fixed
+  // popovers inside a scroll container, so we portal the open popover into a
+  // layer outside the bar and anchor it under the button.
+  const popoverLayer = document.getElementById("facet-popover-layer")!;
+  const isMobile = () => window.matchMedia("(max-width: 880px)").matches;
+  const popoverHome = new Map<HTMLElement, HTMLElement>();
+  for (const btn of facetBtns) {
+    popoverHome.set(popoverFor(btn), btn.closest<HTMLElement>(".facet")!);
+  }
+
+  function positionPopover(btn: HTMLButtonElement) {
+    popoverFor(btn).style.setProperty(
+      "--popover-top",
+      `${Math.round(btn.getBoundingClientRect().bottom + 8)}px`,
+    );
+  }
+
+  function placePopover(pop: HTMLElement, btn: HTMLButtonElement) {
+    if (isMobile()) {
+      if (pop.parentElement !== popoverLayer) popoverLayer.appendChild(pop);
+      positionPopover(btn);
+    } else {
+      const home = popoverHome.get(pop)!;
+      if (pop.parentElement !== home) home.appendChild(pop);
+    }
+  }
+
+  function resetPopSearch(pop: HTMLElement) {
+    const input = pop.querySelector<HTMLInputElement>("[data-pop-search]");
+    if (!input || input.value === "") return;
+    input.value = "";
+    pop.querySelectorAll<HTMLElement>(".fopt.hidden").forEach((o) => {
+      o.classList.remove("hidden");
+    });
+  }
+
+  function closeAllPopovers(except?: HTMLButtonElement) {
+    for (const btn of facetBtns) {
+      if (btn === except) continue;
+      const pop = popoverFor(btn);
+      if (!pop.hidden) {
+        resetPopSearch(pop);
+        pop.hidden = true;
+        btn.setAttribute("aria-expanded", "false");
+      }
+    }
+  }
+
+  function togglePopover(btn: HTMLButtonElement) {
+    const pop = popoverFor(btn);
+    const willOpen = pop.hidden;
+    closeAllPopovers(btn);
+    if (!willOpen) resetPopSearch(pop);
+    if (willOpen) placePopover(pop, btn);
+    pop.hidden = !willOpen;
+    btn.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) pop.querySelector<HTMLElement>("input,button")?.focus();
+  }
+
+  for (const btn of facetBtns) {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePopover(btn);
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest(".facet") && !t.closest(".popover")) closeAllPopovers();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    for (const btn of facetBtns) {
+      const pop = popoverFor(btn);
+      if (!pop.hidden) {
+        resetPopSearch(pop);
+        pop.hidden = true;
+        btn.setAttribute("aria-expanded", "false");
+        btn.focus();
+      }
+    }
+  });
+
+  document.addEventListener("input", (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.matches("[data-pop-search]")) return;
+    const query = (t as HTMLInputElement).value.trim().toLowerCase();
+    const list = t.closest(".popover")!.querySelector(".pop-list")!;
+    for (const opt of list.querySelectorAll<HTMLElement>(".fopt")) {
+      const text = opt.querySelector(".fopt-text")!.textContent!.toLowerCase();
+      opt.classList.toggle("hidden", query !== "" && !text.includes(query));
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const t = e.target as HTMLElement;
+    if (!t.matches("[data-pop-search]")) return;
+    e.preventDefault();
+    const pop = t.closest(".popover") as HTMLElement;
+    const visible = [
+      ...pop.querySelectorAll<HTMLElement>(".pop-list .fopt:not(.hidden)"),
+    ];
+    if (visible.length !== 1) return;
+    const box = visible[0].querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-key]',
+    );
+    if (box && !box.checked) {
+      box.checked = true;
+      active[box.dataset.key!].add(box.value);
+      applyFilters();
+    }
+    resetPopSearch(pop);
+  });
+
+  document.addEventListener("change", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (!t.matches('input[type="checkbox"][data-key]')) return;
+    const set = active[t.dataset.key!];
+    if (t.checked) set.add(t.value);
+    else set.delete(t.value);
+    applyFilters();
+  });
+  searchEl.addEventListener("input", () => {
+    setQuery(searchEl.value);
+    applyFilters();
+  });
+  function clearAll() {
+    for (const set of Object.values(active)) set.clear();
+    document
+      .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-key]')
+      .forEach((i) => {
+        i.checked = false;
+      });
+    document.querySelectorAll<HTMLElement>(".popover").forEach((p) => {
+      resetPopSearch(p);
+    });
+    searchEl.value = "";
+    setQuery("");
+    applyFilters();
+  }
+  document.getElementById("clearBtn")!.addEventListener("click", clearAll);
+  document.getElementById("emptyClearBtn")!.addEventListener("click", clearAll);
+
+  function setView(v: "card" | "table") {
+    currentView = v;
+    document.getElementById("vcard")!.classList.toggle("on", v === "card");
+    document.getElementById("vtable")!.classList.toggle("on", v === "table");
+    syncView();
+  }
+  document
+    .getElementById("vcard")!
+    .addEventListener("click", () => setView("card"));
+  document
+    .getElementById("vtable")!
+    .addEventListener("click", () => setView("table"));
+
+  function applySort() {
+    const field = sortField ?? "code";
+    const dir = sortField === null ? 1 : sortDir;
+    const sorted = [...DATA].sort((a, b) => {
+      let x: string | number;
+      let y: string | number;
+      if (field === "collab_country") {
+        x = (a.countries || []).join();
+        y = (b.countries || []).join();
+      } else if (field === "start_year" || field === "code") {
+        x = +(a[field] as string) || 0;
+        y = +(b[field] as string) || 0;
+      } else {
+        x = (a[field] as string) || "";
+        y = (b[field] as string) || "";
+      }
+      return x > y ? dir : x < y ? -dir : 0;
+    });
+    for (const d of sorted) {
+      const row = rowFor.get(d.code);
+      if (row) tbody.appendChild(row);
+    }
+  }
+  thead.addEventListener("click", (e) => {
+    const th = (e.target as HTMLElement).closest<HTMLElement>("th[data-sort]");
+    if (!th) return;
+    const f = th.dataset.sort!;
+    if (sortField !== f) {
+      sortField = f;
+      sortDir = 1;
+    } else if (sortDir === 1) {
+      sortDir = -1;
+    } else {
+      sortField = null;
+      sortDir = 1;
+    }
+    thead.querySelectorAll<HTMLElement>("th[data-sort]").forEach((h) => {
+      const ind = h.querySelector<HTMLElement>(".sort-ind");
+      if (!ind) return;
+      ind.replaceChildren();
+      if (h.dataset.sort === sortField) {
+        const tpl = sortDir > 0 ? chevUpTpl : chevDownTpl;
+        ind.append(tpl.content.cloneNode(true));
+      }
+    });
+    applySort();
+  });
+
+  function downloadCsv(): void {
+    if (!isFiltered()) return;
+    const cols = [
+      "code",
+      "name",
+      "name_zh",
+      "acronym",
+      "start_year",
+      "status",
+      "governance",
+      "region",
+      "type_primary",
+      "problem1",
+      "broad_issues",
+      "lead_actor",
+      "collab_name",
+      "collab_origin",
+      "website",
+    ];
+    const res = DATA.filter((d) => {
+      const c = cardFor.get(d.code);
+      return c ? cardMatches(c) : false;
+    });
+    const csv = [cols.join(",")]
+      .concat(res.map((d) => cols.map((c) => esc(d[c])).join(",")))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "cgel_filtered.csv";
+    a.click();
+  }
+
+  exportBtn.addEventListener("click", (e) => {
+    if (!isFiltered()) return;
+    e.preventDefault();
+    document.dispatchEvent(
+      new CustomEvent("cgel:request-download", {
+        detail: { filters: downloadFilterSummary() },
+      }),
+    );
+  });
+  document.addEventListener("cgel:download-ready", () => downloadCsv());
+
+  function visibleOrdered(): Initiative[] {
+    const els =
+      currentView === "table"
+        ? tbody.querySelectorAll<HTMLElement>("tr[data-code]:not(.hidden)")
+        : cardsEl.querySelectorAll<HTMLElement>(".card:not(.hidden)");
+    const out: Initiative[] = [];
+    for (const el of els) {
+      const d = byCode.get(el.dataset.code!);
+      if (d) out.push(d);
+    }
+    return out;
+  }
+
+  function dispatchDetail(d: Initiative) {
+    const list = visibleOrdered();
+    document.dispatchEvent(
+      new CustomEvent("cgel:open-detail", {
+        detail: {
+          item: d,
+          list,
+          index: list.findIndex((x) => x.code === d.code),
+        },
+      }),
+    );
+  }
+  cardsEl.addEventListener("click", (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>("[data-code]");
+    if (!card) return;
+    const d = byCode.get(card.dataset.code!);
+    if (d) dispatchDetail(d);
+  });
+  tbody.addEventListener("click", (e) => {
+    const tr = (e.target as HTMLElement).closest<HTMLElement>("tr[data-code]");
+    if (!tr) return;
+    const d = byCode.get(tr.dataset.code!);
+    if (d) dispatchDetail(d);
+  });
+
+  const params = new URLSearchParams(location.search);
+  for (const key of [
+    "type",
+    "region",
+    "problem",
+    "gov",
+    "country",
+    "sdg",
+  ] as const) {
+    for (const value of params.getAll(key)) {
+      const box = filtersEl.querySelector<HTMLInputElement>(
+        `input[data-key="${key}"][value="${CSS.escape(value)}"]`,
+      );
+      if (box) {
+        box.checked = true;
+        active[key].add(value);
+      }
+    }
+  }
+  const q0 = params.get("q");
+  if (q0) {
+    searchEl.value = q0;
+    setQuery(q0);
+  }
+  applyFilters();
+</script>
+
+<style>
+  .browse-layout {
+    display: block;
+  }
+  .browse-main {
+    min-width: 0;
+  }
+  .filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 6px;
+  }
+  .facet {
+    position: relative;
+  }
+  .facet-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .facet-btn:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+  .facet-btn.on,
+  .facet-btn[aria-expanded="true"] {
+    border-color: var(--teal);
+    color: var(--teal-d);
+  }
+  .facet-btn.on {
+    background: var(--paper);
+  }
+  .fb-chev {
+    display: inline-flex;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+  }
+  .facet-btn[aria-expanded="true"] .fb-chev {
+    transform: rotate(180deg);
+  }
+  .fb-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 20px;
+    background: var(--teal);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .fb-count[hidden] {
+    display: none;
+  }
+  .popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 30;
+    width: max-content;
+    min-width: 300px;
+    min-inline-size: 0;
+    max-width: 560px;
+    max-height: 360px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(18, 58, 61, 0.14);
+  }
+  .popover[hidden] {
+    display: none;
+  }
+  .facet:last-child .popover {
+    left: auto;
+    right: 0;
+  }
+  .pop-search {
+    position: sticky;
+    top: -8px;
+    padding: 4px 4px 8px;
+    background: #fff;
+  }
+  .pop-search-input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
+    background: var(--paper);
+  }
+  .pop-search-input:focus {
+    outline: none;
+    border-color: var(--teal);
+  }
+  .pop-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .fopt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .fopt:hover {
+    background: var(--paper);
+    color: var(--teal);
+  }
+  .fopt input {
+    accent-color: var(--teal);
+    cursor: pointer;
+    flex: none;
+  }
+  .fopt .ct {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .export-ico {
+    display: inline-flex;
+    align-items: center;
+  }
+  .export-btn .ico-filtered,
+  .export-btn .label-filtered,
+  .export-btn.is-download .ico-full,
+  .export-btn.is-download .label-full {
+    display: none;
+  }
+  .export-btn.is-download .ico-filtered {
+    display: inline-flex;
+  }
+  .export-btn.is-download .label-filtered {
+    display: inline;
+  }
+  .searchbar-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 220px;
+  }
+  .searchbar-ico {
+    position: absolute;
+    left: 13px;
+    display: inline-flex;
+    align-items: center;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .searchbar {
+    width: 100%;
+    padding: 11px 14px 11px 38px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 14px;
+    background: #fff;
+  }
+  .searchbar:focus {
+    outline: none;
+    border-color: var(--teal);
+  }
+  .searchbar-wrap:focus-within .searchbar-ico {
+    color: var(--teal);
+  }
+  .viewtog {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow: hidden;
+  }
+  .viewtog button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 13px;
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .viewtog button.on {
+    background: var(--teal);
+    color: var(--paper);
+  }
+  .resultbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .resultbar > span:last-child {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  #rcount {
+    white-space: nowrap;
+  }
+  .clearbtn {
+    font-size: 12px;
+    color: var(--rust);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+  .clearbtn:hover {
+    text-decoration: underline;
+  }
+  .exporthint {
+    margin: -4px 0 16px;
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 64ch;
+  }
+  .exporthint a {
+    color: var(--teal);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .exporthint a:hover {
+    color: var(--teal-d);
+  }
+  .exporthint a :global(.lucide) {
+    vertical-align: -2px;
+  }
+  #activeChips {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+  #activeChips :global(.activefilter) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(29, 90, 95, 0.12);
+    color: var(--teal-d);
+    padding: 4px 6px 4px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+  }
+  #activeChips :global(.activefilter b) {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 50%;
+    color: var(--teal-d);
+    cursor: pointer;
+    opacity: 0.65;
+    transition: 0.15s;
+  }
+  #activeChips :global(.activefilter b:hover) {
+    opacity: 1;
+    background: rgba(29, 90, 95, 0.18);
+  }
+  #activeChips :global(.activefilter b svg) {
+    width: 14px;
+    height: 14px;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 15px;
+  }
+  #tablewrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--paper2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  thead th {
+    text-align: left;
+    padding: 12px 14px;
+    background: var(--teal-d);
+    color: var(--paper);
+    font-weight: 500;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover {
+    background: var(--teal);
+  }
+  .sort-ind {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  tbody td {
+    padding: 11px 14px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+    vertical-align: top;
+  }
+  tbody tr {
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  tbody tr:hover {
+    background: rgba(29, 90, 95, 0.06);
+  }
+  td .code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .emptystate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 64px 20px;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+  }
+  .emptystate-ico {
+    display: inline-flex;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  .emptystate-title {
+    margin: 4px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .emptystate-sub {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .hidden {
+    display: none;
+  }
+  @media (max-width: 880px) {
+    .toolbar {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: stretch;
+    }
+    .searchbar-wrap {
+      grid-column: 1 / -1;
+      min-width: 0;
+    }
+    .viewtog {
+      min-width: 0;
+    }
+    .viewtog button {
+      padding-inline: 11px;
+    }
+    #exportBtn {
+      min-width: 0;
+      justify-content: center;
+    }
+    .export-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .filterbar {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .facet {
+      flex: none;
+    }
+    #facet-popover-layer .popover {
+      position: fixed;
+      top: var(--popover-top, 160px);
+      left: 12px;
+      right: 12px;
+      z-index: 50;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      max-height: min(60vh, calc(100dvh - var(--popover-top, 160px) - 16px));
+      overflow-y: auto;
+    }
+    .fopt {
+      padding: 9px 8px;
+    }
+    .cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

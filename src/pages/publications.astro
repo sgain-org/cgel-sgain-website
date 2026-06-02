@@ -1,0 +1,193 @@
+---
+import { ExternalLinkIcon, FileTextIcon, MailIcon } from "@lucide/astro";
+import Section from "@/components/Section.astro";
+import Layout from "@/layouts/Layout.astro";
+import { CONTACT_EMAIL, PUBLICATION_MAILTO } from "@/lib/constants";
+import { readPublications } from "@/lib/data.server";
+
+const publications = readPublications();
+
+const linkFor = (pub: (typeof publications)[number]) =>
+  pub.doi
+    ? { href: `https://doi.org/${pub.doi}`, label: pub.doi }
+    : pub.url
+      ? { href: pub.url, label: pub.url }
+      : null;
+---
+
+<Layout
+  title="Publications — CGEL Database"
+  description="Publications and other outputs that use or cite the CGEL Database."
+>
+  <Section
+    title="Publications"
+    subtitle="Below we list the publications that use or cite the CGEL Database."
+  >
+    <div class="prose">
+      <p>
+        Using it in your own research? Let us know at{" "}
+        <a href={PUBLICATION_MAILTO}>{CONTACT_EMAIL}</a> and we'll add it here.
+      </p>
+
+      {
+        publications.length === 0 ? (
+          <p class="empty">No publications listed yet — check back soon.</p>
+        ) : (
+          <div class="publist">
+            {publications.map((pub) => {
+              const link = linkFor(pub);
+              return (
+                <div class="pubcard">
+                  <div class="pubicon" aria-hidden="true">
+                    <FileTextIcon size={16} />
+                  </div>
+                  <div class="pubbody">
+                    {(pub.authors || pub.year) && (
+                      <p class="pubmeta">
+                        {[pub.authors, pub.year && `(${pub.year})`]
+                          .filter(Boolean)
+                          .join(" ")}
+                      </p>
+                    )}
+                    {pub.title && <p class="pubtitle">{pub.title}</p>}
+                    {pub.journal && (
+                      <p class="pubjournal">
+                        {pub.journal}
+                        {pub.volume && `, ${pub.volume}`}.
+                      </p>
+                    )}
+                    {link && (
+                      <a
+                        class="puburl"
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        <ExternalLinkIcon size={11} />
+                        {link.label}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      }
+
+      <div class="pubcallout">
+        <p>Are you using the CGEL Database in your research?</p>
+        <a class="pubcallout-btn" href={PUBLICATION_MAILTO}>
+          <MailIcon size={13} /> Contact us to add your publication
+        </a>
+      </div>
+    </div>
+  </Section>
+</Layout>
+
+<style>
+  .publist {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 24px 0 0;
+  }
+  .pubcard {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 22px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: 0.2s;
+  }
+  .pubcard:hover {
+    border-color: rgba(64, 99, 131, 0.35);
+    box-shadow: 0 4px 16px rgba(18, 58, 61, 0.07);
+  }
+  .pubicon {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--paper2);
+    color: var(--teal-d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pubbody {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .pubmeta {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .pubtitle {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .pubjournal {
+    font-size: 13.5px;
+    font-style: italic;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .publist .puburl {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--teal);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .publist .puburl:hover {
+    color: var(--teal-d);
+    text-decoration: none;
+  }
+
+  .pubcallout {
+    margin-top: 28px;
+    padding: 24px;
+    background: var(--paper2);
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .pubcallout p {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .prose .pubcallout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    transition: 0.2s;
+  }
+  .prose .pubcallout-btn:hover {
+    background: var(--paper);
+    border-color: var(--slate);
+    color: var(--ink);
+  }
+  .empty {
+    color: var(--muted);
+  }
+</style>

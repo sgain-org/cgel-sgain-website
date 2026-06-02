@@ -1,0 +1,191 @@
+---
+import CalloutCard from "@/components/CalloutCard.astro";
+import Section from "@/components/Section.astro";
+import Layout from "@/layouts/Layout.astro";
+import { DOI_URL, INITIATIVE_TYPES } from "@/lib/constants";
+import { readInitiatives, variableCount } from "@/lib/data.server";
+
+const initiativeCount = readInitiatives().length;
+const variables = variableCount();
+
+const criteria = [
+  {
+    n: 1,
+    title: "Led by Chinese actors.",
+    body: "The initiative is either (co-)created by Chinese actors, or its operation is mainly led by Chinese actors.",
+  },
+  {
+    n: 2,
+    title: "Crosses China's borders.",
+    body: "Reflecting our focus on China's global efforts, the initiative operates at the multilateral, bilateral, or transnational level. Initiatives that do not involve non-Chinese actors, or have no activity beyond China's borders, are excluded.",
+  },
+  {
+    n: 3,
+    title: "Involves substantial action.",
+    body: "As governance refers to institutionalised arrangements, the initiative must involve real steering and be recognised as authoritative by its constituent actors, rather than lip service.",
+  },
+  {
+    n: 4,
+    title: "Addresses environmental issues.",
+    body: "The initiative primarily aims to address environmental issues, or has them as one of its key concerns.",
+  },
+  {
+    n: 5,
+    title: "Active during 2000–2024.",
+    body: "The observation window covers initiatives active at any point in this period, including those that began before 2000 or ended before 2025.",
+  },
+];
+---
+
+<Layout
+  title="Methodology — CGEL Database"
+  description="How CGEL initiatives are selected and coded: the unit of analysis and inclusion criteria, how we operationalise leadership, and how the database was built."
+>
+  <Section
+    title="Methodology"
+    subtitle="A summary of how initiatives are selected and coded. The full dataset and codebook are published together at the University of Bath Research Data Archive."
+  >
+    <div class="prose">
+      <CalloutCard
+        title="Full dataset & codebook — University of Bath Research Data Archive"
+        href={DOI_URL}
+        cta="Visit the data repository"
+        external
+      >
+        The complete CGEL database ({initiativeCount} initiatives, {variables} variables)
+        and the full
+        codebook — governance-level definitions, initiative-type coding, the
+        IISD environmental typology, and data conventions — are available in one
+        place.
+      </CalloutCard>
+
+      <h3>Unit of Analysis &amp; Inclusion Criteria</h3>
+      <p>
+        The unit of analysis is a <strong>governance initiative</strong> — an institutionalised
+        arrangement that must involve an <em>intentional process of steering</em> and
+        must <em>secure recognition of its authority</em> from the individuals and
+        organisations it engages with. An initiative is included when it meets all
+        of the following:
+      </p>
+      <div class="criteria">
+        {
+          criteria.map((c) => (
+            <div class="crit">
+              <div class="num">{c.n}</div>
+              <div class="txt">
+                <p class="crit-title">{c.title}</p>
+                <p class="crit-body">{c.body}</p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <h3>How We Operationalise Leadership</h3>
+      <p>
+        Leadership in global environmental governance is not an abstract
+        attribute; it is enacted through concrete actions. We therefore observe
+        it through the governance functions that each initiative performs. Each
+        initiative is coded into up to three of six functional types, ordered by
+        importance:
+      </p>
+      <ol class="fn-list">
+        {INITIATIVE_TYPES.map(([value]) => <li>{value}</li>)}
+      </ol>
+
+      <h3>How We Built the Database</h3>
+      <p>
+        Since no official register of China-led environmental initiatives exists,
+        we identified cases through a three-step process. First, we systematically
+        searched six established databases of global environmental governance — the
+        PKULaw Database, the International Environmental Agreements Database
+        (IEADB), the UN SDG Actions Platform, the Climate Cooperative Initiatives
+        Database (C-CID), the Yearbook of International Organizations, and the
+        Database of Bilateral Clean Energy and Climate Agreements with China.
+        Second, we conducted a scoping review of academic and grey literature on
+        China in global environmental governance to capture cases the databases
+        omitted. Finally, we consulted subject experts for further suggestions.
+      </p>
+      <p>
+        Each case was screened by at least two researchers to confirm eligibility
+        and remove duplicates. For coding, each case was independently coded by at
+        least two coders working from the shared codebook; disagreements were
+        resolved by checking original sources and through team review, with all
+        decisions archived.
+      </p>
+    </div>
+  </Section>
+</Layout>
+
+<style>
+  .criteria {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .crit {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+  .crit:hover {
+    border-color: rgba(64, 99, 131, 0.2);
+  }
+  .crit .num {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .crit .crit-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .crit .crit-body {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.625;
+  }
+  .fn-list {
+    margin: 4px 0 16px;
+    padding: 0;
+    list-style: none;
+    counter-reset: fn;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .fn-list li {
+    counter-increment: fn;
+    position: relative;
+    padding-left: 24px;
+    font-size: 15px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .fn-list li::before {
+    content: counter(fn) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--teal);
+    font-weight: 600;
+  }
+</style>

@@ -1,0 +1,52 @@
+---
+import CollaborationMapSection from "@/components/home/CollaborationMapSection.astro";
+import HeatmapChartSection from "@/components/home/HeatmapChartSection.astro";
+import HeroSection from "@/components/home/HeroSection.astro";
+import ProblemChartSection from "@/components/home/ProblemChartSection.astro";
+import TemporalChartSection from "@/components/home/TemporalChartSection.astro";
+import Layout from "@/layouts/Layout.astro";
+import { readGeo, readInitiatives, summaryStats, variableCount } from "@/lib/data.server";
+import {
+  buildMapYearData,
+  renderHeatmapSvg,
+  renderMapSvg,
+  renderProblemChartViews,
+  renderTemporalChartViews,
+} from "@/lib/homepage-viz.server";
+
+const initiatives = readInitiatives();
+const geo = readGeo();
+const { initiativeCount, collaboratingCountryCount, regionCount } =
+  summaryStats(initiatives);
+
+const heroStats = [
+  [initiativeCount, "Initiatives"],
+  [collaboratingCountryCount, "Collaborating countries"],
+  [regionCount, "Regions"],
+  ["2000–2024", "Inclusion window"],
+  [variableCount(), "Variables"],
+] as const;
+const temporalChartViews = renderTemporalChartViews(initiatives);
+const heatmapSvg = renderHeatmapSvg(initiatives);
+const problemChartViews = renderProblemChartViews(initiatives);
+const mapSvg = renderMapSvg(initiatives, geo);
+const mapYearDataJson = JSON.stringify(buildMapYearData(initiatives)).replace(
+  /</g,
+  "\\u003c",
+);
+---
+
+<Layout
+  title="CGEL Database — China's Global Environmental Leadership"
+  description="The most comprehensive database of cross-border environmental governance initiatives led by Chinese state and non-state actors."
+>
+  <HeroSection heroStats={heroStats} />
+
+  <CollaborationMapSection mapSvg={mapSvg} mapYearDataJson={mapYearDataJson} />
+
+  <TemporalChartSection temporalChartViews={temporalChartViews} />
+
+  <HeatmapChartSection heatmapSvg={heatmapSvg} />
+
+  <ProblemChartSection problemChartViews={problemChartViews} />
+</Layout>
