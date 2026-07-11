@@ -5,7 +5,7 @@ Static [Astro](https://astro.build/) site, deployed to Hostinger.
 ## Stack
 
 - **Package manager:** pnpm (use `pnpm`)
-- **Node:** v24 (see `.nvmrc`)
+- **Node:** v26 (see `.nvmrc`)
 
 ## Commands
 
@@ -15,7 +15,7 @@ Static [Astro](https://astro.build/) site, deployed to Hostinger.
 | `pnpm dev`        | Start the dev server                    |
 | `pnpm build`      | Build the static site to `dist/`        |
 | `pnpm preview`    | Preview the production build            |
-| `pnpm check`      | Type-check (`astro check`)              |
+| `pnpm check`      | Check (`astro check`)                   |
 | `pnpm lint`       | Lint + format check (Biome)             |
 | `pnpm lint:fix`   | Auto-fix lint/format issues             |
 | `pnpm unused`     | Report unused files/exports/deps (knip) |

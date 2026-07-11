@@ -10,3 +10,13 @@ dist/
 
 # macOS
 .DS_Store
+
+# cloudflare
+.wrangler
+
+# ide
+.idea
+.vscode
+
+# agents
+.claude
