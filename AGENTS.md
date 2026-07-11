@@ -29,3 +29,11 @@ Static [Astro](https://astro.build/) site, deployed to Hostinger.
 - Biome enforces 2-space indent, double quotes, 100-char lines, LF endings, organized imports.
 - Source lives in `src/`: `components/`, `layouts/`, `lib/`, `pages/`, `styles/`.
 - Don't edit generated/vendored dirs: `dist/`, `.astro/`, `node_modules/`, `public/`, `resources/`.
+
+## Cloudflare Deployment
+
+- `astro.config.mjs` uses the `@astrojs/cloudflare` adapter.
+- `wrangler.jsonc` is the source of truth for Cloudflare deployment settings.
+- The Worker entrypoint is `@astrojs/cloudflare/entrypoints/server`.
+- Static assets are served from `dist/` through the `ASSETS` binding.
+- Do not add deployment configuration for another platform unless the deployment target changes again.

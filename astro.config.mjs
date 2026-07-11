@@ -1,4 +1,5 @@
 // @ts-check
+import cloudflare from "@astrojs/cloudflare";
 import sitemap from "@astrojs/sitemap";
 import { defineConfig } from "astro/config";
 import { SITE_URL } from "./src/lib/site.ts";
@@ -11,4 +12,5 @@ export default defineConfig({
     format: "directory",
   },
   integrations: [sitemap()],
+  adapter: cloudflare(),
 });
