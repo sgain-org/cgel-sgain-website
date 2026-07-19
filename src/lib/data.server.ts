@@ -1,22 +1,29 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { csvParse } from "d3";
+import { csvParseRows } from "d3";
 import { cleanRow } from "@/lib/clean.ts";
 import type { Initiative, Publication, WorldGeo } from "@/lib/types.ts";
 
-const SOURCE_CSV = "data/initiatives.csv";
-
-const PUBLICATIONS_CSV = "data/publications.csv";
+// Inlined at build time: the Cloudflare prerender runtime (workerd) has no `node:fs`.
+import initiativesCsv from "../../data/initiatives.csv?raw";
+import publicationsCsv from "../../data/publications.csv?raw";
+import worldGeoJson from "../../data/world.geojson?raw";
 
 const NON_VARIABLE_COLUMNS = ["Other Sources", "Comments"];
 
-function parseCsv(relPath: string) {
-  return csvParse(readFileSync(join(process.cwd(), relPath), "utf-8"));
+// `csvParseRows` avoids d3's `new Function` row accessor, which workerd blocks.
+function parseDelimited(text: string): { rows: Record<string, string>[]; columns: string[] } {
+  const [columns = [], ...body] = csvParseRows(text);
+  const rows = body.map((cells) => {
+    const row: Record<string, string> = {};
+    columns.forEach((name, i) => {
+      row[name] = cells[i] ?? "";
+    });
+    return row;
+  });
+  return { rows, columns };
 }
 
 function parseSource(): { rows: Record<string, string>[]; columns: string[] } {
-  const rows = parseCsv(SOURCE_CSV);
-  return { rows: rows as unknown as Record<string, string>[], columns: rows.columns };
+  return parseDelimited(initiativesCsv);
 }
 
 export function readInitiatives(): Initiative[] {
@@ -27,7 +34,7 @@ export function readInitiatives(): Initiative[] {
 
 export function readPublications(): Publication[] {
   const trim = (v: string | undefined) => (v ?? "").trim();
-  return parseCsv(PUBLICATIONS_CSV).map((row) => ({
+  return parseDelimited(publicationsCsv).rows.map((row) => ({
     authors: trim(row.authors),
     year: trim(row.year),
     title: trim(row.title),
@@ -43,8 +50,7 @@ export function variableCount(): number {
 }
 
 export function readGeo(): WorldGeo {
-  const json = readFileSync(join(process.cwd(), "data/world.geojson"), "utf-8");
-  return JSON.parse(json) as WorldGeo;
+  return JSON.parse(worldGeoJson) as WorldGeo;
 }
 
 export function summaryStats(data: Initiative[]): {
