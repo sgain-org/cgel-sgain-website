@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Always operate from the project root, regardless of where this is invoked
-# from, so `.env` and `./dist/` resolve consistently.
+# Run from the project root so `.env` and `./dist/` resolve consistently.
 cd "$(dirname "$0")/.."
 
-# Local runs read config from .env; CI provides it via the environment (secrets).
+# Local runs read config from .env; CI provides it via the environment.
 if [[ -f .env ]]; then
   source .env
 fi
 
-# The static build output is what we deploy; refuse to mirror if it's missing
-# (with --delete a missing/empty source is dangerous). Run `pnpm build` first.
+# Mirroring with --delete from a missing source would wipe the remote.
 if [[ ! -d ./dist ]]; then
   echo "Error: ./dist not found — run 'pnpm build' before deploying." >&2
   exit 1
 fi
 
-# Optional: pass --dry-run to see what would be uploaded without actually uploading
+# Optional: --dry-run to list what would be uploaded
 DRY_RUN=""
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN="--dry-run"
 

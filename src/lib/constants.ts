@@ -1,6 +1,6 @@
 import { buildMailto } from "@/lib/site.ts";
 
-export const DOI_ID = "10.15125/BATH-01664";
+const DOI_ID = "10.15125/BATH-01664";
 export const DOI_URL = `https://doi.org/${DOI_ID}`;
 
 export const ISO: Record<string, string> = {

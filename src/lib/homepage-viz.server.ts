@@ -236,10 +236,7 @@ function renderTemporalRows(initiatives: Initiative[]): { rows: YearRow[]; govRo
   return { rows, govRows };
 }
 
-export function renderTemporalSvg(
-  initiatives: Initiative[],
-  governance: string | null = null,
-): string {
+function renderTemporalSvg(initiatives: Initiative[], governance: string | null = null): string {
   const width = 800;
   const height = 440;
   const margin = { top: 14, right: 214, bottom: 36, left: 54 };

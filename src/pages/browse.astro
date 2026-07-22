@@ -497,9 +497,8 @@ const dataJson = JSON.stringify(initiatives).replace(/</g, "\\u003c");
   const popoverFor = (btn: HTMLButtonElement): HTMLElement =>
     document.getElementById(btn.getAttribute("aria-controls")!)!;
 
-  // On mobile the filter bar scrolls horizontally; iOS Safari clips fixed
-  // popovers inside a scroll container, so we portal the open popover into a
-  // layer outside the bar and anchor it under the button.
+  // iOS Safari clips fixed popovers inside the scrolling filter bar, so on
+  // mobile we portal the open popover out and anchor it under its button.
   const popoverLayer = document.getElementById("facet-popover-layer")!;
   const isMobile = () => window.matchMedia("(max-width: 880px)").matches;
   const popoverHome = new Map<HTMLElement, HTMLElement>();
