@@ -37,7 +37,7 @@ const linkFor = (pub: (typeof publications)[number]) =>
             {publications.map((pub) => {
               const link = linkFor(pub);
               return (
-                <div class="pubcard">
+                <div class="pubcard" data-reveal>
                   <div class="pubicon" aria-hidden="true">
                     <FileTextIcon size={16} />
                   </div>

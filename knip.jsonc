@@ -1,10 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignoreFiles": [
-    ".github/scripts/comment-preview-url.cjs", // GitHub Actions script
-    "src/lib/search.ts" // false positive, used in `src/pages/browse.astro`
+    ".github/scripts/comment-preview-url.cjs" // GitHub Actions script
   ],
-  "ignoreDependencies": [
-    "fuse.js" // false positive, used in `src/lib/search.ts`
+  "entry": [
+    "src/lib/search.ts" // loaded from Astro <script> tag
   ]
 }
