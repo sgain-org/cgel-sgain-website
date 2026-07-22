@@ -6,6 +6,7 @@ Static [Astro](https://astro.build/) site, deployed to Hostinger.
 
 - **Package manager:** pnpm (use `pnpm`)
 - **Node:** v26 (see `.nvmrc`)
+- **Animation:** [Motion](https://motion.dev/) via `src/lib/motion.ts`
 
 ## Commands
 
@@ -31,6 +32,9 @@ Static [Astro](https://astro.build/) site, deployed to Hostinger.
 - Run `pnpm lint:fix` and `pnpm check` before committing.
 - Formatting and imports are enforced by Biome (`biome.json` is the source of truth).
 - Source lives in `src/`: `components/`, `layouts/`, `lib/`, `pages/`, `styles/`.
+- Animate with the helpers in `src/lib/motion.ts`. Mark scroll-revealed elements
+  `data-reveal`; they start hidden only when `<html>` has `motion-ready`, which
+  `Layout.astro` withholds from visitors who prefer reduced motion.
 - Don't edit generated/vendored dirs: `dist/`, `.astro/`, `node_modules/`, `public/`, `resources/`.
 
 ## Cloudflare Deployment

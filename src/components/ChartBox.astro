@@ -8,9 +8,9 @@ const { id, svg } = Astro.props;
 
 {
   svg ? (
-    <div class="chartbox" id={id} set:html={svg} />
+    <div class="chartbox" id={id} data-reveal set:html={svg} />
   ) : (
-    <div class="chartbox" id={id}>
+    <div class="chartbox" id={id} data-reveal>
       <slot />
     </div>
   )

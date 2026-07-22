@@ -59,6 +59,13 @@ body.menu-open {
   overflow: hidden;
 }
 
+/* Motion (motion.dev) animates these in. Hidden only when `Layout.astro` has
+   confirmed JS is running and the visitor hasn't asked for reduced motion. */
+.motion-ready [data-reveal],
+.motion-ready [data-enter] {
+  opacity: 0;
+}
+
 .serif {
   font-family: var(--font-serif);
 }
