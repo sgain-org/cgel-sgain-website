@@ -89,12 +89,22 @@ const jsonLd = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
 
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonLd)}></script>
 
     <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spline+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+
+    <script is:inline>
+      // Runs before first paint, so animated elements are never hidden without JS.
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("motion-ready");
+      }
+    </script>
   </head>
   <body>
     <Nav />
@@ -104,5 +114,11 @@ const jsonLd = {
     </main>
 
     <Footer />
+
+    <script>
+      import { revealOnScroll } from "@/lib/motion";
+
+      revealOnScroll();
+    </script>
   </body>
 </html>

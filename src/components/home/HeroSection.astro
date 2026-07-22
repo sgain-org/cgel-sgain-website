@@ -12,13 +12,15 @@ const { heroStats } = Astro.props as Props;
 
 <header class="home-hero">
   <div class="wrap">
-    <div class="eyebrow">SGAIN project, University of Bath</div>
-    <h1 class="title">China's Global Environmental Leadership Database</h1>
-    <p class="subtitle">
+    <div class="eyebrow" data-enter>SGAIN project, University of Bath</div>
+    <h1 class="title" data-enter>
+      China's Global Environmental Leadership Database
+    </h1>
+    <p class="subtitle" data-enter>
       First comprehensive database of China-led cross-border environmental
       governance
     </p>
-    <div class="hero-ctas">
+    <div class="hero-ctas" data-enter>
       <a class="hero-btn primary" href="/browse/">
         Explore Dataset<ArrowRightIcon size={16} />
       </a>
@@ -26,11 +28,16 @@ const { heroStats } = Astro.props as Props;
         <BookOpenIcon size={16} />Read Methodology
       </a>
     </div>
-    <div class="stats" id="statbar">
+    <div class="stats" id="statbar" data-enter>
       {
         heroStats.map(([number, label]) => (
           <div class="stat">
-            <div class="n">{number}</div>
+            <div
+              class="n"
+              data-count-to={typeof number === "number" ? number : undefined}
+            >
+              {number}
+            </div>
             <div class="l">{label}</div>
           </div>
         ))
@@ -170,6 +177,8 @@ const { heroStats } = Astro.props as Props;
     font-size: 26px;
     color: #fff;
     line-height: 1;
+    /* Keeps the count-up from nudging the label about as digits change. */
+    font-variant-numeric: tabular-nums;
   }
 
   .stat .l {
@@ -228,3 +237,10 @@ const { heroStats } = Astro.props as Props;
     }
   }
 </style>
+
+<script>
+  import { countUp, enterStaggered } from "@/lib/motion";
+
+  enterStaggered(".home-hero [data-enter]");
+  countUp(".home-hero .stat .n[data-count-to]");
+</script>
