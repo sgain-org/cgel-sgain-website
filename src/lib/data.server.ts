@@ -35,6 +35,7 @@ export function readInitiatives(): Initiative[] {
 export function readPublications(): Publication[] {
   const trim = (v: string | undefined) => (v ?? "").trim();
   return parseDelimited(publicationsCsv).rows.map((row) => ({
+    type: trim(row.type).toLowerCase() === "non-academic" ? "non-academic" : "academic",
     authors: trim(row.authors),
     year: trim(row.year),
     title: trim(row.title),

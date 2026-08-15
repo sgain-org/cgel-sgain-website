@@ -1,5 +1,5 @@
 ---
-import { ExternalLinkIcon, FileTextIcon, MailIcon } from "@lucide/astro";
+import { ExternalLinkIcon, FileTextIcon, MailIcon, NewspaperIcon } from "@lucide/astro";
 import Section from "@/components/Section.astro";
 import Layout from "@/layouts/Layout.astro";
 import { CONTACT_EMAIL, PUBLICATION_MAILTO } from "@/lib/constants";
@@ -7,11 +7,16 @@ import { readPublications } from "@/lib/data.server";
 
 const publications = readPublications();
 
+const groups = [
+  { heading: "Academic publications", icon: FileTextIcon, items: publications.filter((p) => p.type === "academic") },
+  { heading: "Other outputs", icon: NewspaperIcon, items: publications.filter((p) => p.type === "non-academic") },
+].filter((g) => g.items.length > 0);
+
 const linkFor = (pub: (typeof publications)[number]) =>
   pub.doi
     ? { href: `https://doi.org/${pub.doi}`, label: pub.doi }
     : pub.url
-      ? { href: pub.url, label: pub.url }
+      ? { href: pub.url, label: new URL(pub.url).hostname.replace(/^www\./, "") }
       : null;
 ---
 
@@ -21,7 +26,7 @@ const linkFor = (pub: (typeof publications)[number]) =>
 >
   <Section
     title="Publications"
-    subtitle="Below we list the publications that use or cite the CGEL Database."
+    subtitle="Below we list the academic publications and media coverage that use or cite the CGEL Database."
   >
     <div class="prose">
       <p>
@@ -30,48 +35,53 @@ const linkFor = (pub: (typeof publications)[number]) =>
       </p>
 
       {
-        publications.length === 0 ? (
+        groups.length === 0 ? (
           <p class="empty">No publications listed yet — check back soon.</p>
         ) : (
-          <div class="publist">
-            {publications.map((pub) => {
-              const link = linkFor(pub);
-              return (
-                <div class="pubcard" data-reveal>
-                  <div class="pubicon" aria-hidden="true">
-                    <FileTextIcon size={16} />
-                  </div>
-                  <div class="pubbody">
-                    {(pub.authors || pub.year) && (
-                      <p class="pubmeta">
-                        {[pub.authors, pub.year && `(${pub.year})`]
-                          .filter(Boolean)
-                          .join(" ")}
-                      </p>
-                    )}
-                    {pub.title && <p class="pubtitle">{pub.title}</p>}
-                    {pub.journal && (
-                      <p class="pubjournal">
-                        {pub.journal}
-                        {pub.volume && `, ${pub.volume}`}.
-                      </p>
-                    )}
-                    {link && (
-                      <a
-                        class="puburl"
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener"
-                      >
-                        <ExternalLinkIcon size={11} />
-                        {link.label}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          groups.map((group) => (
+            <div>
+              <h3>{group.heading}</h3>
+              <div class="publist">
+                {group.items.map((pub) => {
+                  const link = linkFor(pub);
+                  return (
+                    <div class="pubcard" data-reveal>
+                      <div class="pubicon" aria-hidden="true">
+                        <group.icon size={16} />
+                      </div>
+                      <div class="pubbody">
+                        {(pub.authors || pub.year) && (
+                          <p class="pubmeta">
+                            {[pub.authors, pub.year && `(${pub.year})`]
+                              .filter(Boolean)
+                              .join(" ")}
+                          </p>
+                        )}
+                        {pub.title && <p class="pubtitle">{pub.title}</p>}
+                        {pub.journal && (
+                          <p class="pubjournal">
+                            {pub.journal}
+                            {pub.volume && `, ${pub.volume}`}.
+                          </p>
+                        )}
+                        {link && (
+                          <a
+                            class="puburl"
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            <ExternalLinkIcon size={11} />
+                            {link.label}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )
       }
 

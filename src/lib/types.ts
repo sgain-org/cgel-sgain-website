@@ -26,7 +26,10 @@ export interface Initiative {
   [key: string]: string | string[] | undefined;
 }
 
+export type PublicationType = "academic" | "non-academic";
+
 export interface Publication {
+  type: PublicationType;
   authors: string;
   year: string;
   title: string;
