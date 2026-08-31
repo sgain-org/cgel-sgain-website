@@ -26,7 +26,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",
     "@astrojs/sitemap": "^3.7.3",
-    "@lucide/astro": "^1.33.0",
+    "@lucide/astro": "^1.35.0",
     "astro": "^7.2.4",
     "d3": "^7.9.0",
     "fuse.js": "^7.5.0",
